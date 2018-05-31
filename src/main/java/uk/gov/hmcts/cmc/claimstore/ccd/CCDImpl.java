@@ -10,6 +10,7 @@ import uk.gov.hmcts.ccd.domain.model.aggregated.ProfileCaseState;
 import uk.gov.hmcts.cmc.claimstore.repositories.ClaimRepository;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,7 +60,12 @@ public class CCDImpl implements ICCDApplication<Claim> {
 
     @Override
     public List<CaseViewTrigger> getTriggers(String caseId) {
-        return null;
+        CaseViewTrigger trigger = new CaseViewTrigger();
+        trigger.setId("more-time-requested-on-paper");
+        trigger.setName("More time requested on paper");
+        trigger.setDescription("More time requested on paper");
+
+        return Arrays.asList(trigger);
     }
 
     @Override
