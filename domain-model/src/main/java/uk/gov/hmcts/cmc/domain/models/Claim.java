@@ -7,6 +7,7 @@ import lombok.Builder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import uk.gov.hmcts.ccd.ICase;
 import uk.gov.hmcts.ccd.definition.CaseListField;
+import uk.gov.hmcts.ccd.definition.CaseSearchableField;
 import uk.gov.hmcts.cmc.domain.amount.TotalAmountCalculator;
 import uk.gov.hmcts.cmc.domain.models.offers.Settlement;
 import uk.gov.hmcts.cmc.domain.models.response.Response;
@@ -28,10 +29,15 @@ import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 public class Claim implements ICase {
 
     private final Long id;
+    @CaseSearchableField(label = "Submitter ID", order = 2)
+    @CaseListField(label = "Submitter ID")
     private final String submitterId;
     private final String letterHolderId;
+    @CaseSearchableField(label = "Defendant ID", order = 3)
+    @CaseListField(label = "Defendant ID")
     private final String defendantId;
     private final String externalId;
+    @CaseSearchableField(label = "Reference number", order = 1)
     @CaseListField(label = "Reference number")
     private final String referenceNumber;
     @JsonProperty("claim")
