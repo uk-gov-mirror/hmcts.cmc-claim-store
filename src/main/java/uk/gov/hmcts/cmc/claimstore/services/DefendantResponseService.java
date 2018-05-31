@@ -29,12 +29,12 @@ public class DefendantResponseService {
         EventProducer eventProducer,
         ClaimService claimService,
         UserService userService,
-        AppInsights appInsights
+        AppInsights cmcAppInsights
     ) {
         this.eventProducer = eventProducer;
         this.claimService = claimService;
         this.userService = userService;
-        this.appInsights = appInsights;
+        this.appInsights = cmcAppInsights;
     }
 
     @Transactional

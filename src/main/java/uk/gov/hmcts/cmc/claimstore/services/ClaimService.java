@@ -61,7 +61,7 @@ public class ClaimService {
         ResponseDeadlineCalculator responseDeadlineCalculator,
         MoreTimeRequestRule moreTimeRequestRule,
         EventProducer eventProducer,
-        AppInsights appInsights,
+        AppInsights cmcAppInsights,
         CCDCaseDataToClaim ccdCaseDataToClaim
     ) {
         this.claimRepository = claimRepository;
@@ -71,7 +71,7 @@ public class ClaimService {
         this.eventProducer = eventProducer;
         this.caseRepository = caseRepository;
         this.moreTimeRequestRule = moreTimeRequestRule;
-        this.appInsights = appInsights;
+        this.appInsights = cmcAppInsights;
         this.ccdCaseDataToClaim = ccdCaseDataToClaim;
     }
 

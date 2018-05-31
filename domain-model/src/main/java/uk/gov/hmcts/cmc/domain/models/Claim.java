@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import uk.gov.hmcts.ccd.ICase;
+import uk.gov.hmcts.ccd.definition.CaseListField;
 import uk.gov.hmcts.cmc.domain.amount.TotalAmountCalculator;
 import uk.gov.hmcts.cmc.domain.models.offers.Settlement;
 import uk.gov.hmcts.cmc.domain.models.response.Response;
@@ -23,13 +25,14 @@ import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
     allowGetters = true
 )
 @Builder
-public class Claim {
+public class Claim implements ICase {
 
     private final Long id;
     private final String submitterId;
     private final String letterHolderId;
     private final String defendantId;
     private final String externalId;
+    @CaseListField(label = "Reference number")
     private final String referenceNumber;
     @JsonProperty("claim")
     private final ClaimData claimData;
@@ -37,9 +40,11 @@ public class Claim {
     private final LocalDate issuedOn;
     private final LocalDate responseDeadline;
     private final boolean moreTimeRequested;
+    @CaseListField(label = "Submitter email")
     private final String submitterEmail;
     private final LocalDateTime respondedAt;
     private final Response response;
+    @CaseListField(label = "Defendant email")
     private final String defendantEmail;
     private final CountyCourtJudgment countyCourtJudgment;
     private final LocalDateTime countyCourtJudgmentRequestedAt;
@@ -233,6 +238,22 @@ public class Claim {
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ourStyle());
+    }
+
+    @Override
+    public String getCaseId() {
+        return id + "";
+    }
+
+    @Override
+    public State getState() {
+        return State.Open;
+    }
+
+    enum State {
+        Open,
+        Closed,
+        OnHold
     }
 
 }

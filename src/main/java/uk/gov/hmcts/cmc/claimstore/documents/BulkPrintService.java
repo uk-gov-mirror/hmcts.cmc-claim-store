@@ -44,12 +44,12 @@ public class BulkPrintService {
         SendLetterApi sendLetterApi,
         AuthTokenGenerator authTokenGenerator,
         BulkPrintStaffNotificationService bulkPrintStaffNotificationService,
-        AppInsights appInsights
+        AppInsights cmcAppInsights
     ) {
         this.sendLetterApi = sendLetterApi;
         this.authTokenGenerator = authTokenGenerator;
         this.bulkPrintStaffNotificationService = bulkPrintStaffNotificationService;
-        this.appInsights = appInsights;
+        this.appInsights = cmcAppInsights;
     }
 
     @EventListener

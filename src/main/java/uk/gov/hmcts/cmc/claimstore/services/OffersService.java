@@ -33,12 +33,12 @@ public class OffersService {
         ClaimService claimService,
         CaseRepository caseRepository,
         EventProducer eventProducer,
-        AppInsights appInsights
+        AppInsights cmcAppInsights
     ) {
         this.claimService = claimService;
         this.caseRepository = caseRepository;
         this.eventProducer = eventProducer;
-        this.appInsights = appInsights;
+        this.appInsights = cmcAppInsights;
     }
 
     @Transactional

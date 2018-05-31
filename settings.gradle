@@ -1,5 +1,5 @@
 rootProject.name = 'claim-store'
-
+includeBuild '../../ccsmarathan/ccd-data-store-api'
 include 'email-client'
 include 'domain-model'
 include 'domain-sample-data'

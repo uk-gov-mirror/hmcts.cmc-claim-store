@@ -6,7 +6,7 @@ import uk.gov.hmcts.reform.logging.appinsights.AbstractAppInsights;
 
 import static java.util.Collections.singletonMap;
 
-@Component
+@Component("cmcAppInsights")
 public class AppInsights extends AbstractAppInsights {
 
     public AppInsights(TelemetryClient telemetryClient) {
