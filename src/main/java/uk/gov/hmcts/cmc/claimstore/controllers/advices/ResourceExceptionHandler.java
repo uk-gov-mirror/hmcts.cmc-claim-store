@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import uk.gov.hmcts.ccd.endpoint.exceptions.ApiException;
 import uk.gov.hmcts.cmc.claimstore.exceptions.ConflictException;
 import uk.gov.hmcts.cmc.claimstore.exceptions.DefendantLinkingException;
 import uk.gov.hmcts.cmc.claimstore.exceptions.ForbiddenActionException;
@@ -174,5 +175,12 @@ public class ResourceExceptionHandler {
         return ResponseEntity
             .status(exc.status())
             .body(new ExceptionForClient(exc.status(), errorMessage));
+    }
+
+    @ExceptionHandler(ApiException.class)
+    protected ResponseEntity<Object> handleApiException(ApiException exc) {
+        return ResponseEntity
+            .status(HttpStatus.UNPROCESSABLE_ENTITY)
+            .body(exc);
     }
 }
