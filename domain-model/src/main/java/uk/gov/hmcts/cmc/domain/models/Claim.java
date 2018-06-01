@@ -7,6 +7,9 @@ import lombok.Builder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import uk.gov.hmcts.ccd.ICase;
 import uk.gov.hmcts.ccd.definition.CaseListField;
+import uk.gov.hmcts.ccd.definition.CaseSearchableField;
+import uk.gov.hmcts.ccd.definition.CaseViewField;
+import uk.gov.hmcts.ccd.definition.CaseViewTabs;
 import uk.gov.hmcts.cmc.domain.amount.TotalAmountCalculator;
 import uk.gov.hmcts.cmc.domain.models.offers.Settlement;
 import uk.gov.hmcts.cmc.domain.models.response.Response;
@@ -25,14 +28,23 @@ import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
     allowGetters = true
 )
 @Builder
+@CaseViewTabs(value = {"General", "Parties"})
 public class Claim implements ICase {
 
     private final Long id;
+    @CaseSearchableField(label = "Submitter ID", order = 2)
+    @CaseListField(label = "Submitter ID")
+    @CaseViewField(label = "Submitter ID", tab = "Parties")
     private final String submitterId;
     private final String letterHolderId;
+    @CaseSearchableField(label = "Defendant ID", order = 3)
+    @CaseListField(label = "Defendant ID")
+    @CaseViewField(label = "Defendant ID", tab = "Parties")
     private final String defendantId;
     private final String externalId;
+    @CaseSearchableField(label = "Reference number", order = 1)
     @CaseListField(label = "Reference number")
+    @CaseViewField(label = "Reference number", tab = "General")
     private final String referenceNumber;
     @JsonProperty("claim")
     private final ClaimData claimData;
@@ -41,10 +53,12 @@ public class Claim implements ICase {
     private final LocalDate responseDeadline;
     private final boolean moreTimeRequested;
     @CaseListField(label = "Submitter email")
+    @CaseViewField(label = "Submitter email", tab = "Parties")
     private final String submitterEmail;
     private final LocalDateTime respondedAt;
     private final Response response;
     @CaseListField(label = "Defendant email")
+    @CaseViewField(label = "Defendant email", tab = "Parties")
     private final String defendantEmail;
     private final CountyCourtJudgment countyCourtJudgment;
     private final LocalDateTime countyCourtJudgmentRequestedAt;
