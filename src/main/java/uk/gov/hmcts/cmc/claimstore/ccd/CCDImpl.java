@@ -1,5 +1,6 @@
 package uk.gov.hmcts.cmc.claimstore.ccd;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,13 +8,17 @@ import org.springframework.stereotype.Service;
 import uk.gov.hmcts.ccd.ICCDApplication;
 import uk.gov.hmcts.ccd.domain.model.aggregated.CaseViewTrigger;
 import uk.gov.hmcts.ccd.domain.model.aggregated.ProfileCaseState;
+import uk.gov.hmcts.cmc.claimstore.processors.JsonMapper;
 import uk.gov.hmcts.cmc.claimstore.repositories.ClaimRepository;
 import uk.gov.hmcts.cmc.domain.models.Claim;
+import uk.gov.hmcts.cmc.domain.models.sampledata.SampleClaim;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class CCDImpl implements ICCDApplication<Claim> {
@@ -24,6 +29,8 @@ public class CCDImpl implements ICCDApplication<Claim> {
 
     @Autowired
     private ClaimRepository repository;
+    @Autowired
+    private JsonMapper jsonMapper;
 
     // Allows CCD to fetch cases from the service.
     @Override
@@ -48,14 +55,24 @@ public class CCDImpl implements ICCDApplication<Claim> {
 
     // Called by CCD when a caseworker creates a case.
     @Override
-    public void saveCase(Claim c) {
-        //
+    public void saveCase(Claim input) {
+        Claim claim = SampleClaim.builder()
+            .withClaimId(null)
+            .build();
+
+        repository.saveSubmittedByClaimant(jsonMapper.toJson(claim), input.getSubmitterId(), input.getLetterHolderId(),
+            LocalDate.now(), claim.getResponseDeadline(), UUID.randomUUID().toString(), input.getSubmitterEmail());
+    }
+
+    @Override
+    public Claim getCase(String id) {
+        return repository.getById(Long.valueOf(id)).orElse(null);
     }
 
     // Inform CCD of the events our case can have.
     @Override
     public ImmutableSet<String> getEvents() {
-        return ImmutableSet.of("created");
+        return ImmutableSet.of("Created");
     }
 
     @Override
