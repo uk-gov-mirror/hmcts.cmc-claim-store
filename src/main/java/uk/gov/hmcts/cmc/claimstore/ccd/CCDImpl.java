@@ -55,13 +55,15 @@ public class CCDImpl implements ICCDApplication<Claim> {
 
     // Called by CCD when a caseworker creates a case.
     @Override
-    public void saveCase(Claim input) {
+    public String saveCase(Claim input) {
         Claim claim = SampleClaim.builder()
             .withClaimId(null)
             .build();
 
-        repository.saveSubmittedByClaimant(jsonMapper.toJson(claim), input.getSubmitterId(), input.getLetterHolderId(),
+        Long id = repository.saveSubmittedByClaimant(jsonMapper.toJson(claim), input.getSubmitterId(), input.getLetterHolderId(),
             LocalDate.now(), claim.getResponseDeadline(), UUID.randomUUID().toString(), input.getSubmitterEmail());
+
+        return Long.toString(id);
     }
 
     @Override
