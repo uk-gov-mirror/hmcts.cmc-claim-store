@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
+import uk.gov.hmcts.ccd.definition.ComplexType;
+import uk.gov.hmcts.ccd.definition.FieldLabel;
 import uk.gov.hmcts.cmc.domain.constraints.EachNotNull;
 import uk.gov.hmcts.cmc.domain.models.amount.Amount;
 import uk.gov.hmcts.cmc.domain.models.evidence.Evidence;
@@ -32,21 +34,25 @@ import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ClaimData {
     @Valid
+    @FieldLabel(value = "externalId")
     private final UUID externalId;
 
     @Valid
     @NotEmpty
     @Size(max = 20, message = "at most {max} claimants are supported")
     @EachNotNull
+    @FieldLabel(value = "claimants")
     private final List<Party> claimants;
 
     @Valid
     @NotEmpty
     @Size(max = 20, message = "at most {max} defendants are supported")
     @EachNotNull
+    @FieldLabel(value = "defendants")
     private final List<TheirDetails> defendants;
 
     @Valid
+    @FieldLabel(value = "payment")
     private final Payment payment;
 
     @Valid
@@ -60,6 +66,7 @@ public class ClaimData {
     private final String feeCode;
 
     @Valid
+    @FieldLabel(value = "Interest")
     private final Interest interest;
 
     @Valid
@@ -77,6 +84,7 @@ public class ClaimData {
     @Valid
     @NotBlank
     @Size(max = 99000)
+    @FieldLabel(value = "Reason")
     private final String reason;
 
     @Valid

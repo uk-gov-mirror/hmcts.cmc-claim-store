@@ -87,11 +87,11 @@ public class Interest {
         }
         Interest interest = (Interest) o;
         return Objects.equals(type, interest.type)
-                && Objects.equals(interestBreakdown, interest.interestBreakdown)
-                && Objects.equals(rate, interest.rate)
-                && Objects.equals(reason, interest.reason)
-                && Objects.equals(specificDailyAmount, interest.specificDailyAmount)
-                && Objects.equals(interestDate, interest.interestDate);
+            && Objects.equals(interestBreakdown, interest.interestBreakdown)
+            && Objects.equals(rate, interest.rate)
+            && Objects.equals(reason, interest.reason)
+            && Objects.equals(specificDailyAmount, interest.specificDailyAmount)
+            && Objects.equals(interestDate, interest.interestDate);
     }
 
     @Override

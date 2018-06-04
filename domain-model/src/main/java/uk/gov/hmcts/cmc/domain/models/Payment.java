@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.hibernate.validator.constraints.NotBlank;
+import uk.gov.hmcts.ccd.definition.FieldLabel;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -13,13 +14,16 @@ import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 
 @JsonIgnoreProperties(value = {"description", "state"})
 public class Payment {
+    @FieldLabel(value = "id")
     private final String id;
     /**
      * The amount which was paid, in pennies for payments v1 or pounds with payments v2.
      */
     @NotNull
+    @FieldLabel(value = "amount")
     private final BigDecimal amount;
     @NotBlank
+    @FieldLabel(value = "amount")
     private final String reference;
     @JsonProperty("date_created")
     private final String dateCreated;
