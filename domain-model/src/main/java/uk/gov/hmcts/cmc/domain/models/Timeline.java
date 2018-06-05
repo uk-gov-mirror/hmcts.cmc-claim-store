@@ -3,6 +3,7 @@ package uk.gov.hmcts.cmc.domain.models;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import uk.gov.hmcts.ccd.definition.FieldLabel;
 
 import java.util.List;
 import java.util.Objects;
@@ -11,6 +12,7 @@ import javax.validation.constraints.Size;
 
 import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 
+@FieldLabel("Timeline")
 public class Timeline {
 
     @Valid

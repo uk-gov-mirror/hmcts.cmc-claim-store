@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.hibernate.validator.constraints.NotBlank;
+import uk.gov.hmcts.ccd.definition.FieldLabel;
 import uk.gov.hmcts.cmc.domain.models.Address;
 import uk.gov.hmcts.cmc.domain.models.legalrep.Representative;
 
@@ -33,6 +34,7 @@ public abstract class Party implements NamedParty {
 
     @NotBlank
     @Size(max = 255, message = "may not be longer than {max} characters")
+    @FieldLabel("Name")
     private final String name;
 
     @Valid
@@ -40,9 +42,11 @@ public abstract class Party implements NamedParty {
     private final Address address;
 
     @Valid
+    @FieldLabel("Correspondance Address")
     private final Address correspondenceAddress;
 
     @Size(max = 30, message = "may not be longer than {max} characters")
+    @FieldLabel("Mobile Phone")
     private final String mobilePhone;
 
     @Valid

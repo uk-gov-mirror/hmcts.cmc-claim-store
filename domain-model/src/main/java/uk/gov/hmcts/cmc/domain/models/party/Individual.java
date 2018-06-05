@@ -2,6 +2,7 @@ package uk.gov.hmcts.cmc.domain.models.party;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import uk.gov.hmcts.ccd.definition.FieldLabel;
 import uk.gov.hmcts.cmc.domain.constraints.AgeRangeValidator;
 import uk.gov.hmcts.cmc.domain.models.Address;
 import uk.gov.hmcts.cmc.domain.models.legalrep.Representative;
@@ -14,6 +15,7 @@ public class Individual extends Party {
 
     @JsonUnwrapped
     @AgeRangeValidator
+    @FieldLabel("Date of birth")
     private final LocalDate dateOfBirth;
 
     public Individual(

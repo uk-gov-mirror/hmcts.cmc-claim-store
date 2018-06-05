@@ -1,6 +1,7 @@
 package uk.gov.hmcts.cmc.domain.models.party;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import uk.gov.hmcts.ccd.definition.FieldLabel;
 import uk.gov.hmcts.cmc.domain.models.Address;
 import uk.gov.hmcts.cmc.domain.models.legalrep.Representative;
 
@@ -10,7 +11,9 @@ import java.util.Optional;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Organisation extends Party implements HasContactPerson {
 
+    @FieldLabel("Contact Person")
     private final String contactPerson;
+    @FieldLabel("Companies house number")
     private final String companiesHouseNumber;
 
     public Organisation(

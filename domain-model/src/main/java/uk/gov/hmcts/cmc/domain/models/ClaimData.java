@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
+import uk.gov.hmcts.ccd.definition.CaseIgnore;
 import uk.gov.hmcts.ccd.definition.ComplexType;
 import uk.gov.hmcts.ccd.definition.FieldLabel;
 import uk.gov.hmcts.cmc.domain.constraints.EachNotNull;
@@ -32,6 +33,7 @@ import javax.validation.constraints.Size;
 import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
+@FieldLabel(value = "Claim Data")
 public class ClaimData {
     @Valid
     @FieldLabel(value = "externalId")
@@ -41,22 +43,23 @@ public class ClaimData {
     @NotEmpty
     @Size(max = 20, message = "at most {max} claimants are supported")
     @EachNotNull
-    @FieldLabel(value = "claimants")
+    @FieldLabel(value = "Claimants")
     private final List<Party> claimants;
 
     @Valid
     @NotEmpty
     @Size(max = 20, message = "at most {max} defendants are supported")
     @EachNotNull
-    @FieldLabel(value = "defendants")
+    @FieldLabel(value = "Defendants")
     private final List<TheirDetails> defendants;
 
     @Valid
-    @FieldLabel(value = "payment")
+    @FieldLabel(value = "Payment")
     private final Payment payment;
 
     @Valid
     @NotNull
+    @FieldLabel("Amount")
     private final Amount amount;
 
     @NotNull

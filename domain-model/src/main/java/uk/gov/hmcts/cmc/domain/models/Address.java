@@ -1,30 +1,37 @@
 package uk.gov.hmcts.cmc.domain.models;
 
 import org.hibernate.validator.constraints.NotBlank;
+import uk.gov.hmcts.ccd.definition.FieldLabel;
 import uk.gov.hmcts.cmc.domain.constraints.Postcode;
 
 import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+@FieldLabel("Address")
 public class Address {
 
     @NotBlank(message = "Address Line1 should not be empty")
     @Size(max = 100, message = "Address Line1 should not be longer than {max} characters")
+    @FieldLabel(value = "Address line 1")
     private final String line1;
 
     @Size(max = 100, message = "Address Line2 should not be longer than {max} characters")
+    @FieldLabel(value = "Address line 2")
     private final String line2;
 
     @Size(max = 100, message = "Address Line3 should not be longer than {max} characters")
+    @FieldLabel(value = "Address line 3")
     private final String line3;
 
     @NotBlank(message = "City/town should not be empty")
     @Size(max = 100, message = "City should not be longer than {max} characters")
+    @FieldLabel(value = "City")
     private final String city;
 
     @NotNull
     @Postcode
+    @FieldLabel("Postcode")
     private final String postcode;
 
     public Address(String line1,

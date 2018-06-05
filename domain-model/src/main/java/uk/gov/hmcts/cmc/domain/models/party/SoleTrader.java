@@ -1,6 +1,7 @@
 package uk.gov.hmcts.cmc.domain.models.party;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import uk.gov.hmcts.ccd.definition.FieldLabel;
 import uk.gov.hmcts.cmc.domain.models.Address;
 import uk.gov.hmcts.cmc.domain.models.legalrep.Representative;
 
@@ -12,8 +13,10 @@ import javax.validation.constraints.Size;
 public class SoleTrader extends Party implements TitledParty {
 
     @Size(max = 35, message = "must be at most {max} characters")
+    @FieldLabel("Title")
     private final String title;
 
+    @FieldLabel("Business Name")
     private final String businessName;
 
     public SoleTrader(

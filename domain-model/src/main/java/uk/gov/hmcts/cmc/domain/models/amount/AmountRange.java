@@ -1,6 +1,7 @@
 package uk.gov.hmcts.cmc.domain.models.amount;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import uk.gov.hmcts.ccd.definition.FieldLabel;
 import uk.gov.hmcts.cmc.domain.constraints.Money;
 
 import java.math.BigDecimal;
@@ -11,6 +12,7 @@ import javax.validation.constraints.NotNull;
 
 import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 
+@FieldLabel("Amount Range")
 public class AmountRange implements Amount {
 
     @Money

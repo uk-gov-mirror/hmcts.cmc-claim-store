@@ -3,6 +3,7 @@ package uk.gov.hmcts.cmc.domain.models.amount;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import uk.gov.hmcts.ccd.definition.FieldLabel;
 import uk.gov.hmcts.cmc.domain.constraints.MinTotalAmount;
 import uk.gov.hmcts.cmc.domain.models.AmountRow;
 
@@ -15,12 +16,14 @@ import javax.validation.constraints.Size;
 
 import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 
+@FieldLabel(value = "Breakdown")
 public class AmountBreakDown implements Amount {
 
     @Valid
     @NotNull
     @Size(max = 1000)
     @MinTotalAmount("0.01")
+    @FieldLabel(value = "Row")
     private final List<AmountRow> rows;
 
     @JsonCreator

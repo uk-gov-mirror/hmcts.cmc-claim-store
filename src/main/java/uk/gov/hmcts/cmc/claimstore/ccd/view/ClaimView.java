@@ -13,7 +13,6 @@ public class ClaimView extends BaseCaseView<Claim> {
 
     @Override
     protected void onRender(Claim theCase) {
-        render(theCase.getReferenceNumber());
-        render(theCase.getClaimData().getReason());
+        render(theCase.getClaimData());
     }
 }

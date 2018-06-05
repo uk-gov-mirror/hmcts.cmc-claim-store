@@ -13,6 +13,7 @@ import javax.validation.constraints.NotNull;
 import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 
 @JsonIgnoreProperties(value = {"description", "state"})
+@FieldLabel("Payment")
 public class Payment {
     @FieldLabel(value = "id")
     private final String id;
@@ -20,13 +21,16 @@ public class Payment {
      * The amount which was paid, in pennies for payments v1 or pounds with payments v2.
      */
     @NotNull
-    @FieldLabel(value = "amount")
+    @FieldLabel(value = "Amount")
     private final BigDecimal amount;
     @NotBlank
-    @FieldLabel(value = "amount")
+    @FieldLabel(value = "Reference")
     private final String reference;
     @JsonProperty("date_created")
+    @FieldLabel("Date Created")
     private final String dateCreated;
+
+    @FieldLabel(value = "Status")
     private final String status;
 
     public Payment(

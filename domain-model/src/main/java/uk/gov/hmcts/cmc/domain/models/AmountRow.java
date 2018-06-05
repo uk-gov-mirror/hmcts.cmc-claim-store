@@ -1,6 +1,7 @@
 package uk.gov.hmcts.cmc.domain.models;
 
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import uk.gov.hmcts.ccd.definition.FieldLabel;
 import uk.gov.hmcts.cmc.domain.constraints.ClaimantAmount;
 import uk.gov.hmcts.cmc.domain.constraints.Money;
 
@@ -12,10 +13,12 @@ import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 
 @ClaimantAmount
 public class AmountRow {
+    @FieldLabel("Reason")
     private final String reason;
 
     @Money
     @DecimalMin(value = "0.01")
+    @FieldLabel("Amount")
     private final BigDecimal amount;
 
     public AmountRow(String reason, BigDecimal amount) {
