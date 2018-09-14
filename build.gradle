@@ -9,6 +9,7 @@ plugins {
   id 'org.sonarqube' version '2.6.2'
   id 'jacoco'
   id 'net.ltgt.apt' version '0.18'
+  id "info.solidsoft.pitest" version "1.3.0"
 }
 
 dependencyUpdates.resolutionStrategy = {
@@ -117,7 +118,10 @@ def versions = [
   logback          : '1.2.3',
   springBoot       : springBootVersion,
   springfoxSwagger : '2.9.2',
-  reformJavaLogging: '3.0.2'
+  reformJavaLogging: '3.0.2',
+  pitest: '1.3.2',
+  gradlePitest: '1.3.0',
+  sonarPitest: '0.5'
 ]
 
 configurations {
@@ -141,6 +145,10 @@ dependencies {
   compile group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc'
   compile group: 'org.springframework.boot', name: 'spring-boot-starter-aop'
   compile group: 'org.springframework.boot', name: 'spring-boot-starter-json'
+
+  compile group: 'org.pitest', name: 'pitest', version: versions.pitest
+  compile group:'info.solidsoft.gradle.pitest', name: 'gradle-pitest-plugin', version: versions.gradlePitest
+  compile group:'org.codehaus.sonar-plugins', name:'sonar-pitest-plugin', version: versions.sonarPitest
 
   compile group: 'org.flywaydb', name: 'flyway-core', version: '5.1.4'
 
@@ -301,6 +309,9 @@ sonarqube {
     property "sonar.projectName", "CMC :: Claim Store"
     property "sonar.jacoco.reportPath", "${listFiles('**/test.exec')}"
     property "sonar.jacoco.itReportPath", "${listFiles('**/apiTest.exec')}"
+    property "sonar.host.url", "https://sonar.reform.hmcts.net/"
+    property "sonar.pitest.mode", "reuseReport"
+    property "sonar.pitest.reportsDirectory", "build/reports/pitest"
     property "sonar.exclusions", "**/ccd/domain/**," +
       "**/cmc/domain/models/**," +
       "**/cmc/claimstore/idam/models/**," +
@@ -312,6 +323,15 @@ sonarqube {
       "**/cmc/claimstore/appinsights/**," +
       "**/ccd/migration/**"
   }
+}
+
+ pitest {
+  targetClasses = ['**uk.gov.hmcts.cmc.*','**uk.gov.hmcts.cmc.ccd.mapper*','**uk.gov.hmcts.cmc.ccd.migration*','**uk.gov.hmcts.cmc.email*']
+  excludedClasses = ['uk.gov.hmcts.cmc.claimstore.config']
+  threads = 4
+  outputFormats = ['XML', 'HTML']
+  timestampedReports = true
+  mutationThreshold = 50
 }
 
 bootJar {
