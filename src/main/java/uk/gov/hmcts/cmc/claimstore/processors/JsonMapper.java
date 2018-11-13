@@ -40,7 +40,7 @@ public class JsonMapper {
             return objectMapper.readValue(value, clazz);
         } catch (IOException e) {
             throw new InvalidApplicationException(
-                String.format(DESERIALIZATION_ERROR_MESSAGE, clazz.getSimpleName()), e
+                String.format(DESERIALIZATION_ERROR_MESSAGE, clazz.getSimpleName()), sanitize(e)
             );
         }
     }
@@ -50,12 +50,23 @@ public class JsonMapper {
             return objectMapper.readValue(value, typeReference);
         } catch (IOException e) {
             throw new InvalidApplicationException(
-                String.format(DESERIALIZATION_ERROR_MESSAGE, typeReference.getType()), e
+                String.format(DESERIALIZATION_ERROR_MESSAGE, typeReference.getType()), sanitize(e)
             );
         }
     }
 
     public <T> T convertValue(Object value, Class<T> clazz) {
         return objectMapper.convertValue(value, clazz);
+    }
+
+    private MaskedException sanitize(IOException ioe) {
+        return new MaskedException(ioe);
+    }
+
+    private class MaskedException extends RuntimeException {
+        public MaskedException(IOException ioe) {
+            super("Original exception message masked", ioe.getCause());
+            setStackTrace(ioe.getStackTrace());
+        }
     }
 }
