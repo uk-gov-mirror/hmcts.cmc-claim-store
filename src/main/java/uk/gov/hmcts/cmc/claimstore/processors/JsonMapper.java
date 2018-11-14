@@ -9,6 +9,8 @@ import uk.gov.hmcts.cmc.claimstore.exceptions.InvalidApplicationException;
 import java.io.IOException;
 import java.util.Map;
 
+import static java.lang.String.format;
+
 @Service
 public class JsonMapper {
 
@@ -26,7 +28,7 @@ public class JsonMapper {
             return objectMapper.writeValueAsString(input);
         } catch (JsonProcessingException e) {
             throw new InvalidApplicationException(
-                String.format(SERIALISATION_ERROR_MESSAGE, input.getClass().getSimpleName()), e
+                format(SERIALISATION_ERROR_MESSAGE, input.getClass().getSimpleName()), e
             );
         }
     }
@@ -40,7 +42,7 @@ public class JsonMapper {
             return objectMapper.readValue(value, clazz);
         } catch (IOException e) {
             throw new InvalidApplicationException(
-                String.format(DESERIALIZATION_ERROR_MESSAGE, clazz.getSimpleName()), sanitize(e)
+                format(DESERIALIZATION_ERROR_MESSAGE, clazz.getSimpleName()), sanitize(e)
             );
         }
     }
@@ -50,7 +52,7 @@ public class JsonMapper {
             return objectMapper.readValue(value, typeReference);
         } catch (IOException e) {
             throw new InvalidApplicationException(
-                String.format(DESERIALIZATION_ERROR_MESSAGE, typeReference.getType()), sanitize(e)
+                format(DESERIALIZATION_ERROR_MESSAGE, typeReference.getType()), sanitize(e)
             );
         }
     }
@@ -60,13 +62,19 @@ public class JsonMapper {
     }
 
     private MaskedException sanitize(IOException ioe) {
-        return new MaskedException(ioe);
+        return MaskedException.from(ioe);
     }
 
-    private class MaskedException extends RuntimeException {
-        public MaskedException(IOException ioe) {
-            super("Original exception message masked", ioe.getCause());
-            setStackTrace(ioe.getStackTrace());
+    private static class MaskedException extends RuntimeException {
+        MaskedException(Throwable ex) {
+            super(format("Original %s message masked", ex.getClass().getCanonicalName()), from(ex.getCause()));
+            setStackTrace(ex.getStackTrace());
+        }
+
+        static MaskedException from(Throwable ex) {
+            return ex == null
+                ? null
+                : new MaskedException(ex);
         }
     }
 }
