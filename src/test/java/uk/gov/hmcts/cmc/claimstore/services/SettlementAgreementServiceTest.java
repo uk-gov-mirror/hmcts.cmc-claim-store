@@ -12,13 +12,16 @@ import uk.gov.hmcts.cmc.claimstore.exceptions.ConflictException;
 import uk.gov.hmcts.cmc.claimstore.repositories.CaseRepository;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 import uk.gov.hmcts.cmc.domain.models.offers.MadeBy;
+import uk.gov.hmcts.cmc.domain.models.offers.Offer;
 import uk.gov.hmcts.cmc.domain.models.offers.Settlement;
 import uk.gov.hmcts.cmc.domain.models.sampledata.SampleClaim;
 import uk.gov.hmcts.cmc.domain.models.sampledata.offers.SampleOffer;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,7 +51,8 @@ public class SettlementAgreementServiceTest {
     @Before
     public void setup() {
         settlementAgreementService =
-            new SettlementAgreementService(claimService, caseRepository, eventProducer, appInsights, ccdEventProducer);
+            new SettlementAgreementService(claimService, caseRepository,
+                eventProducer, appInsights, ccdEventProducer);
     }
 
     @Test
@@ -101,6 +105,38 @@ public class SettlementAgreementServiceTest {
         settlementAgreementService.countersign(claim, AUTHORISATION);
     }
 
+    @Test
+    public void shouldSuccessfullySignSettlementAgreement() {
+        // given
+        Claim claim = SampleClaim.getDefault();
+
+        when(claimService.getClaimByExternalId(eq(claim.getExternalId()),
+            eq(AUTHORISATION))).thenReturn(claim);
+
+        //when
+        settlementAgreementService.signSettlementAgreement(claim.getExternalId(), buildSettlement(), AUTHORISATION);
+
+        //then
+        verify(caseRepository)
+            .updateSettlement(eq(claim), any(Settlement.class), eq(AUTHORISATION), anyString());
+
+        verify(eventProducer).createSignSettlementAgreementEvent(eq(claim));
+
+    }
+
+    @Test(expected = ConflictException.class)
+    public void signSettlementAgreementShouldThrowConflictExceptionWhenSettlementAlreadyReached() {
+        // given
+        Claim settledClaim = SampleClaim.builder()
+            .withSettlementReachedAt(LocalDateTime.now()).build();
+        when(claimService.getClaimByExternalId(eq(settledClaim.getExternalId()),
+            eq(AUTHORISATION))).thenReturn(settledClaim);
+
+        //when
+        settlementAgreementService.signSettlementAgreement(settledClaim.getExternalId(),
+            buildSettlement(), AUTHORISATION);
+    }
+
     private Claim buildClaimWithSettlementAgreementOffer() {
         Settlement settlement = new Settlement();
         settlement.makeOffer(SampleOffer.builder().build(), MadeBy.CLAIMANT);
@@ -124,6 +160,21 @@ public class SettlementAgreementServiceTest {
         settlement.accept(MadeBy.CLAIMANT);
         settlement.countersign(MadeBy.DEFENDANT);
 
-        return SampleClaim.builder().withSettlement(settlement).withSettlementReachedAt(LocalDateTime.now()).build();
+        return SampleClaim.builder().withSettlement(settlement)
+            .withSettlementReachedAt(LocalDateTime.now()).build();
+    }
+
+    private static Settlement buildSettlement() {
+        Settlement settlement = new Settlement();
+        settlement.makeOffer(
+            Offer.builder()
+                .content("Defendant's admission content")
+                .completionDate(LocalDate.now().plusDays(60))
+                .build(),
+            MadeBy.DEFENDANT);
+
+        settlement.accept(MadeBy.CLAIMANT);
+
+        return settlement;
     }
 }
