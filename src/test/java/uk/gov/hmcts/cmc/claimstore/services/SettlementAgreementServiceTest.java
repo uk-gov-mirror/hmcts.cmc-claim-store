@@ -6,6 +6,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import uk.gov.hmcts.cmc.claimstore.appinsights.AppInsights;
+import uk.gov.hmcts.cmc.claimstore.events.CCDEventProducer;
 import uk.gov.hmcts.cmc.claimstore.events.EventProducer;
 import uk.gov.hmcts.cmc.claimstore.exceptions.ConflictException;
 import uk.gov.hmcts.cmc.claimstore.repositories.CaseRepository;
@@ -41,10 +42,13 @@ public class SettlementAgreementServiceTest {
     @Mock
     private AppInsights appInsights;
 
+    @Mock
+    private CCDEventProducer ccdEventProducer;
+
     @Before
     public void setup() {
         settlementAgreementService =
-            new SettlementAgreementService(claimService, caseRepository, eventProducer, appInsights);
+            new SettlementAgreementService(claimService, caseRepository, eventProducer, appInsights, ccdEventProducer);
     }
 
     @Test
@@ -57,7 +61,7 @@ public class SettlementAgreementServiceTest {
         settlementAgreementService.reject(claimWithSettlementAgreement, AUTHORISATION);
 
         verify(caseRepository).updateSettlement(eq(claimWithSettlementAgreement), any(Settlement.class),
-            eq(AUTHORISATION), eq("SETTLEMENT_AGREEMENT_REJECTED_BY_DEFENDANT"));
+            eq(AUTHORISATION), eq("AGREEMENT_REJECTED_BY_DEFENDANT"));
     }
 
     @Test(expected = ConflictException.class)
@@ -88,7 +92,7 @@ public class SettlementAgreementServiceTest {
         settlementAgreementService.countersign(claimWithSettlementAgreement, AUTHORISATION);
 
         verify(caseRepository).updateSettlement(eq(claimWithSettlementAgreement), any(Settlement.class),
-            eq(AUTHORISATION), eq("SETTLEMENT_AGREEMENT_COUNTERSIGNED_BY_DEFENDANT"));
+            eq(AUTHORISATION), eq("AGREEMENT_COUNTERSIGNED_BY_DEFENDANT"));
     }
 
     @Test(expected = ConflictException.class)

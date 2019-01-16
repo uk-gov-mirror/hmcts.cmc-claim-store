@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.cmc.claimstore.appinsights.AppInsights;
+import uk.gov.hmcts.cmc.claimstore.events.CCDEventProducer;
 import uk.gov.hmcts.cmc.claimstore.events.EventProducer;
 import uk.gov.hmcts.cmc.claimstore.exceptions.ConflictException;
 import uk.gov.hmcts.cmc.claimstore.repositories.CaseRepository;
@@ -29,18 +30,21 @@ public class SettlementAgreementService {
     private final CaseRepository caseRepository;
     private final EventProducer eventProducer;
     private final AppInsights appInsights;
+    private final CCDEventProducer ccdEventProducer;
 
     @Autowired
     public SettlementAgreementService(
         ClaimService claimService,
         CaseRepository caseRepository,
         EventProducer eventProducer,
-        AppInsights appInsights
+        AppInsights appInsights,
+        CCDEventProducer ccdEventProducer
     ) {
         this.claimService = claimService;
         this.caseRepository = caseRepository;
         this.eventProducer = eventProducer;
         this.appInsights = appInsights;
+        this.ccdEventProducer = ccdEventProducer;
     }
 
     public Claim reject(Claim claim, String authorisation) {
@@ -48,12 +52,13 @@ public class SettlementAgreementService {
         Settlement settlement = assertSettlementCanBeResponded(claim);
         settlement.reject(MadeBy.DEFENDANT);
 
-        String userAction = format("SETTLEMENT_AGREEMENT_REJECTED_BY_%s", MadeBy.DEFENDANT.name());
+        String userAction = format("AGREEMENT_REJECTED_BY_%s", MadeBy.DEFENDANT.name());
         caseRepository.updateSettlement(claim, settlement, authorisation, userAction);
 
         Claim updated = claimService.getClaimByExternalId(claim.getExternalId(), authorisation);
 
         eventProducer.createRejectSettlementAgreementEvent(updated);
+        this.ccdEventProducer.createCCDSettlementEvent(claim, settlement, authorisation, userAction);
         appInsights.trackEvent(SETTLEMENT_AGREEMENT_REJECTED, REFERENCE_NUMBER, updated.getReferenceNumber());
         return updated;
     }
@@ -63,12 +68,13 @@ public class SettlementAgreementService {
         Settlement settlement = assertSettlementCanBeResponded(claim);
         settlement.countersign(MadeBy.DEFENDANT);
 
-        String userAction = format("SETTLEMENT_AGREEMENT_COUNTERSIGNED_BY_%s", MadeBy.DEFENDANT.name());
+        String userAction = format("AGREEMENT_COUNTERSIGNED_BY_%s", MadeBy.DEFENDANT.name());
         caseRepository.updateSettlement(claim, settlement, authorisation, userAction);
 
         Claim updated = claimService.getClaimByExternalId(claim.getExternalId(), authorisation);
 
         eventProducer.createSettlementAgreementCountersignedEvent(updated);
+        this.ccdEventProducer.createCCDSettlementEvent(claim, settlement, authorisation, userAction);
         appInsights.trackEvent(SETTLEMENT_AGREEMENT_REACHED, REFERENCE_NUMBER, updated.getReferenceNumber());
         return updated;
 

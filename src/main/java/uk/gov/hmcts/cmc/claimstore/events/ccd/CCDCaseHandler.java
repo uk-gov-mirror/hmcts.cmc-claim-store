@@ -183,7 +183,7 @@ public class CCDCaseHandler {
         }
     }
 
-    //    @EventListener
+    @EventListener
     @LogExecutionTime
     public void updateSettlement(CCDSettlementEvent event) {
         String authorization = event.getAuthorization();
