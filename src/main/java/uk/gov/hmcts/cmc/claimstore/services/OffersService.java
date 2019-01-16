@@ -16,10 +16,8 @@ import uk.gov.hmcts.cmc.domain.models.offers.Settlement;
 import java.util.function.Supplier;
 
 import static java.lang.String.format;
-import static uk.gov.hmcts.cmc.ccd.domain.CaseEvent.AGREEMENT_SIGNED_BY_CLAIMANT;
 import static uk.gov.hmcts.cmc.ccd.domain.CaseEvent.OFFER_SIGNED_BY_DEFENDANT;
 import static uk.gov.hmcts.cmc.claimstore.appinsights.AppInsights.REFERENCE_NUMBER;
-import static uk.gov.hmcts.cmc.claimstore.appinsights.AppInsightsEvent.CLAIMANT_RESPONSE_GENERATED_OFFER_MADE;
 import static uk.gov.hmcts.cmc.claimstore.appinsights.AppInsightsEvent.OFFER_MADE;
 import static uk.gov.hmcts.cmc.claimstore.appinsights.AppInsightsEvent.OFFER_REJECTED;
 import static uk.gov.hmcts.cmc.claimstore.appinsights.AppInsightsEvent.SETTLEMENT_REACHED;
@@ -128,18 +126,5 @@ public class OffersService {
 
     private String userAction(String userAction, String userType) {
         return userAction + "_" + userType;
-    }
-
-    protected void signSettlementAgreement(String externalId, Settlement settlement, String authorisation) {
-        final Claim claim = claimService.getClaimByExternalId(externalId, authorisation);
-        assertSettlementIsNotReached(claim);
-        final String userAction = AGREEMENT_SIGNED_BY_CLAIMANT.getValue();
-        this.caseRepository.updateSettlement(claim, settlement, authorisation, userAction);
-
-        final Claim signedSettlementClaim = this.claimService.getClaimByExternalId(externalId, authorisation);
-        this.eventProducer.createSignSettlementAgreementEvent(signedSettlementClaim);
-        this.ccdEventProducer.createCCDSettlementEvent(claim, settlement, authorisation, userAction);
-        appInsights.trackEvent(CLAIMANT_RESPONSE_GENERATED_OFFER_MADE,
-            REFERENCE_NUMBER, signedSettlementClaim.getReferenceNumber());
     }
 }
