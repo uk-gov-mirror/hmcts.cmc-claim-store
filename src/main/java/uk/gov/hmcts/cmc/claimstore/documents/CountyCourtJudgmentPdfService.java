@@ -30,9 +30,7 @@ public class CountyCourtJudgmentPdfService {
     public byte[] createPdf(Claim claim) {
         requireNonNull(claim);
 
-        return pdfServiceClient.generateFromHtml(
-            documentTemplates.getCountyCourtJudgmentDetails(),
-            contentProvider.createContent(claim)
-        );
+        return pdfServiceClient.generateFromHtml(documentTemplates.getCountyCourtJudgmentByRequest(),
+            contentProvider.createContent(claim));
     }
 }

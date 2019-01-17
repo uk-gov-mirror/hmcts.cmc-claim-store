@@ -1,5 +1,6 @@
 package uk.gov.hmcts.cmc.claimstore.controllers.errors;
 
+import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 import org.postgresql.util.PSQLException;
 import org.skife.jdbi.v2.StatementContext;
@@ -27,6 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static uk.gov.hmcts.cmc.domain.models.sampledata.SampleClaim.DEFENDANT_EMAIL;
 import static uk.gov.hmcts.cmc.domain.models.sampledata.SampleClaim.DEFENDANT_ID;
 
 @TestPropertySource(
@@ -105,7 +107,8 @@ public class EndpointErrorsTest extends MockSpringTest {
             .withDefendantId(null)
             .build();
         given(claimRepository.getClaimByExternalId(externalId)).willReturn(Optional.of(claim));
-        given(claimRepository.linkDefendant(claim.getLetterHolderId(), defendantId)).willThrow(UNEXPECTED_ERROR);
+        given(claimRepository.linkDefendant(claim.getLetterHolderId(), defendantId, DEFENDANT_EMAIL))
+            .willThrow(UNEXPECTED_ERROR);
 
         webClient
             .perform(put("/claims/defendant/link")
@@ -117,7 +120,7 @@ public class EndpointErrorsTest extends MockSpringTest {
     public void retrieveDefendantLinkStatusShouldReturn500HttpStatusWhenFailedToRetrieveClaim() throws Exception {
         String referenceNumber = "000MC001";
 
-        given(claimRepository.getByClaimReferenceNumberAnonymous(referenceNumber)).willThrow(UNEXPECTED_ERROR);
+        given(claimRepository.getByClaimReferenceNumber(referenceNumber)).willThrow(UNEXPECTED_ERROR);
 
         webClient
             .perform(get("/claims/" + referenceNumber + "/defendant-link-status"))
@@ -162,14 +165,15 @@ public class EndpointErrorsTest extends MockSpringTest {
                 .build()
         );
 
-        given(claimRepository.saveRepresented(
-            anyString(), anyString(), any(LocalDate.class), any(LocalDate.class), anyString(), anyString())
-        ).willThrow(duplicateKeyError);
+        given(claimRepository.saveRepresented(anyString(), anyString(), any(LocalDate.class),
+            any(LocalDate.class), anyString(), anyString(), anyString()))
+            .willThrow(duplicateKeyError);
 
         webClient
             .perform(post("/claims/" + claimantId)
                 .header(HttpHeaders.CONTENT_TYPE, "application/json")
                 .header(HttpHeaders.AUTHORIZATION, BEARER_TOKEN)
+                .header("Features", ImmutableList.of("admissions"))
                 .content(jsonMapper.toJson(SampleClaimData.validDefaults()))
             )
             .andExpect(status().isConflict());

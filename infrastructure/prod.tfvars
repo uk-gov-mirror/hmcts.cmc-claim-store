@@ -1,5 +1,4 @@
-vault_section = "prod"
-idam_api_url = "https://prod-idamapi.reform.hmcts.net:3511"
+idam_api_url = "https://idam-api.platform.hmcts.net"
 frontend_url = "https://www.moneyclaims.service.gov.uk"
 respond_to_claim_url = "https://www.gov.uk/respond-money-claim"
 db_host = "prod-data-lb.moneyclaim.reform.hmcts.net"

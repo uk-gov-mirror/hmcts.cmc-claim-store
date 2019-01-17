@@ -4,24 +4,31 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import uk.gov.hmcts.cmc.domain.models.legalrep.StatementOfTruth;
 import uk.gov.hmcts.cmc.domain.models.party.Party;
 
-import java.util.Objects;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(
+    value = "responseType",
+    ignoreUnknown = true
+)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "responseType")
 @JsonSubTypes({
-    @JsonSubTypes.Type(value = FullDefenceResponse.class, name = "FULL_DEFENCE")
+    @JsonSubTypes.Type(value = FullDefenceResponse.class, name = "FULL_DEFENCE"),
+    @JsonSubTypes.Type(value = FullAdmissionResponse.class, name = "FULL_ADMISSION"),
+    @JsonSubTypes.Type(value = PartAdmissionResponse.class, name = "PART_ADMISSION")
 })
+@EqualsAndHashCode
 public abstract class Response {
 
+    @NotNull
     private final ResponseType responseType;
 
     private final YesNoOption freeMediation;
@@ -68,30 +75,6 @@ public abstract class Response {
 
     public Optional<StatementOfTruth> getStatementOfTruth() {
         return Optional.ofNullable(statementOfTruth);
-    }
-
-    @Override
-    @SuppressWarnings("squid:S1067") // Its generated code for equals sonar
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-
-        if (other == null || getClass() != other.getClass()) {
-            return false;
-        }
-
-        Response that = (Response) other;
-        return Objects.equals(responseType, that.responseType)
-            && Objects.equals(freeMediation, that.freeMediation)
-            && Objects.equals(moreTimeNeeded, that.moreTimeNeeded)
-            && Objects.equals(defendant, that.defendant)
-            && Objects.equals(statementOfTruth, that.statementOfTruth);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(responseType, freeMediation, moreTimeNeeded, defendant);
     }
 
     @Override

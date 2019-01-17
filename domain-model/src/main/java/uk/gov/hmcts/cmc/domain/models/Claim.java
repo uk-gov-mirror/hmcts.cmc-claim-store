@@ -1,32 +1,40 @@
 package uk.gov.hmcts.cmc.domain.models;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import uk.gov.hmcts.ccd.ICase;
 import uk.gov.hmcts.ccd.definition.CaseListField;
 import uk.gov.hmcts.ccd.definition.CaseSearchableField;
 import uk.gov.hmcts.ccd.definition.ComplexType;
 import uk.gov.hmcts.cmc.domain.amount.TotalAmountCalculator;
+import uk.gov.hmcts.cmc.domain.constraints.DateNotInTheFuture;
+import uk.gov.hmcts.cmc.domain.models.claimantresponse.ClaimantResponse;
 import uk.gov.hmcts.cmc.domain.models.offers.Settlement;
 import uk.gov.hmcts.cmc.domain.models.response.Response;
 
 import java.math.BigDecimal;
+import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Objects;
+import java.util.List;
 import java.util.Optional;
 
 import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 
 // Create these fields in JSON when serialize Java object, ignore them when deserialize.
 @JsonIgnoreProperties(
-    value = {"totalAmountTillToday", "totalAmountTillDateOfIssue", "totalInterest", "serviceDate"},
+    value = {"totalAmountTillToday", "totalAmountTillDateOfIssue",
+        "amountWithInterestUntilIssueDate", "totalInterest",
+        "serviceDate", "amountWithInterest", "directionsQuestionnaireDeadline"},
     allowGetters = true
 )
-@Builder
+@Getter
+@Builder(toBuilder = true)
+@EqualsAndHashCode
 public class Claim implements ICase {
 
     private final Long id;
@@ -58,10 +66,17 @@ public class Claim implements ICase {
     private final LocalDateTime countyCourtJudgmentRequestedAt;
     private final Settlement settlement;
     private final LocalDateTime settlementReachedAt;
-    private final String sealedClaimDocumentSelfPath;
+    private final URI sealedClaimDocument;
+    private final List<String> features;
+    private final LocalDateTime claimantRespondedAt;
+    private final ClaimantResponse claimantResponse;
+    private final LocalDate directionsQuestionnaireDeadline;
+    @DateNotInTheFuture
+    private final LocalDate moneyReceivedOn;
+    private final ReDetermination reDetermination;
+    private final LocalDateTime reDeterminationRequestedAt;
 
     @SuppressWarnings("squid:S00107") // Not sure there's a lot fo be done about removing parameters here
-    @JsonCreator
     public Claim(
         Long id,
         String submitterId,
@@ -82,7 +97,14 @@ public class Claim implements ICase {
         LocalDateTime countyCourtJudgmentRequestedAt,
         Settlement settlement,
         LocalDateTime settlementReachedAt,
-        String sealedClaimDocumentSelfPath
+        URI sealedClaimDocument,
+        List<String> features,
+        LocalDateTime claimantRespondedAt,
+        ClaimantResponse claimantResponse,
+        LocalDate directionsQuestionnaireDeadline,
+        LocalDate moneyReceivedOn,
+        ReDetermination reDetermination,
+        LocalDateTime reDeterminationRequestedAt
     ) {
         this.id = id;
         this.submitterId = submitterId;
@@ -103,91 +125,38 @@ public class Claim implements ICase {
         this.countyCourtJudgmentRequestedAt = countyCourtJudgmentRequestedAt;
         this.settlement = settlement;
         this.settlementReachedAt = settlementReachedAt;
-        this.sealedClaimDocumentSelfPath = sealedClaimDocumentSelfPath;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getSubmitterId() {
-        return submitterId;
-    }
-
-    public String getLetterHolderId() {
-        return letterHolderId;
-    }
-
-    public String getDefendantId() {
-        return defendantId;
-    }
-
-    public String getExternalId() {
-        return externalId;
-    }
-
-    public ClaimData getClaimData() {
-        return claimData;
-    }
-
-    public String getReferenceNumber() {
-        return referenceNumber;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDate getIssuedOn() {
-        return issuedOn;
-    }
-
-    public LocalDate getResponseDeadline() {
-        return responseDeadline;
-    }
-
-    public boolean isMoreTimeRequested() {
-        return moreTimeRequested;
-    }
-
-    public String getSubmitterEmail() {
-        return submitterEmail;
-    }
-
-    public LocalDateTime getRespondedAt() {
-        return respondedAt;
+        this.sealedClaimDocument = sealedClaimDocument;
+        this.features = features;
+        this.claimantRespondedAt = claimantRespondedAt;
+        this.claimantResponse = claimantResponse;
+        this.directionsQuestionnaireDeadline = directionsQuestionnaireDeadline;
+        this.moneyReceivedOn = moneyReceivedOn;
+        this.reDetermination = reDetermination;
+        this.reDeterminationRequestedAt = reDeterminationRequestedAt;
     }
 
     public Optional<Response> getResponse() {
         return Optional.ofNullable(response);
     }
 
-    public String getDefendantEmail() {
-        return defendantEmail;
-    }
-
-    public CountyCourtJudgment getCountyCourtJudgment() {
-        return countyCourtJudgment;
-    }
-
-    public LocalDateTime getCountyCourtJudgmentRequestedAt() {
-        return countyCourtJudgmentRequestedAt;
-    }
-
     public Optional<Settlement> getSettlement() {
         return Optional.ofNullable(settlement);
     }
 
-    public LocalDateTime getSettlementReachedAt() {
-        return settlementReachedAt;
-    }
-
-    public Optional<String> getSealedClaimDocumentSelfPath() {
-        return Optional.ofNullable(sealedClaimDocumentSelfPath);
+    public Optional<URI> getSealedClaimDocument() {
+        return Optional.ofNullable(sealedClaimDocument);
     }
 
     public LocalDate getServiceDate() {
         return issuedOn.plusDays(5);
+    }
+
+    public Optional<BigDecimal> getAmountWithInterest() {
+        return TotalAmountCalculator.amountWithInterest(this);
+    }
+
+    public Optional<BigDecimal> getAmountWithInterestUntilIssueDate() {
+        return TotalAmountCalculator.amountWithInterestUntilIssueDate(this);
     }
 
     public Optional<BigDecimal> getTotalAmountTillToday() {
@@ -202,66 +171,29 @@ public class Claim implements ICase {
         return TotalAmountCalculator.calculateInterestForClaim(this);
     }
 
-    @Override
-    @SuppressWarnings("squid:S1067") // Its generated code for equals sonar
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        Claim claim = (Claim) obj;
-        return moreTimeRequested == claim.moreTimeRequested
-            && Objects.equals(id, claim.id)
-            && Objects.equals(submitterId, claim.submitterId)
-            && Objects.equals(letterHolderId, claim.letterHolderId)
-            && Objects.equals(defendantId, claim.defendantId)
-            && Objects.equals(externalId, claim.externalId)
-            && Objects.equals(referenceNumber, claim.referenceNumber)
-            && Objects.equals(claimData, claim.claimData)
-            && Objects.equals(createdAt, claim.createdAt)
-            && Objects.equals(issuedOn, claim.issuedOn)
-            && Objects.equals(responseDeadline, claim.responseDeadline)
-            && Objects.equals(submitterEmail, claim.submitterEmail)
-            && Objects.equals(respondedAt, claim.respondedAt)
-            && Objects.equals(response, claim.response)
-            && Objects.equals(defendantEmail, claim.defendantEmail)
-            && Objects.equals(countyCourtJudgment, claim.countyCourtJudgment)
-            && Objects.equals(countyCourtJudgmentRequestedAt, claim.countyCourtJudgmentRequestedAt)
-            && Objects.equals(settlement, claim.settlement)
-            && Objects.equals(settlementReachedAt, claim.settlementReachedAt)
-            && Objects.equals(sealedClaimDocumentSelfPath, claim.sealedClaimDocumentSelfPath);
+    public Optional<ClaimantResponse> getClaimantResponse() {
+        return Optional.ofNullable(claimantResponse);
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, submitterId, letterHolderId, defendantId, externalId, referenceNumber,
-            claimData, createdAt, issuedOn, responseDeadline, moreTimeRequested, submitterEmail,
-            respondedAt, response, defendantEmail, countyCourtJudgment, countyCourtJudgmentRequestedAt,
-            settlement, settlementReachedAt, sealedClaimDocumentSelfPath
-        );
+    public Optional<LocalDateTime> getClaimantRespondedAt() {
+        return Optional.ofNullable(claimantRespondedAt);
+    }
+
+    public Optional<LocalDate> getMoneyReceivedOn() {
+        return Optional.ofNullable(moneyReceivedOn);
+    }
+
+    public Optional<LocalDateTime> getReDeterminationRequestedAt() {
+        return Optional.ofNullable(reDeterminationRequestedAt);
+    }
+
+    public Optional<ReDetermination> getReDetermination() {
+        return Optional.ofNullable(reDetermination);
     }
 
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ourStyle());
-    }
-
-    @Override
-    public String getCaseId() {
-        return id + "";
-    }
-
-    @Override
-    public State getState() {
-        return State.Open;
-    }
-
-    enum State {
-        Open,
-        Closed,
-        OnHold
     }
 
 }

@@ -1,5 +1,6 @@
 package uk.gov.hmcts.cmc.claimstore.controllers;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.HttpHeaders;
@@ -39,6 +40,7 @@ import static uk.gov.hmcts.cmc.claimstore.utils.VerificationModeUtils.once;
         "core_case_data.api.url=http://core-case-data-api"
     }
 )
+@Ignore
 public class MoreTimeRequestedCallbackTest extends MockSpringTest {
 
     @SpyBean
@@ -110,7 +112,7 @@ public class MoreTimeRequestedCallbackTest extends MockSpringTest {
 
     @Test
     public void shouldModifyResponseDeadlineOnAboutToSubmit() throws Exception {
-        LocalDate responseDeadline = LocalDate.now().plusDays(3);
+        LocalDate responseDeadline = LocalDate.now().plusDays(14);
         MvcResult mvcResult = makeRequest(ABOUT_TO_SUBMIT_CALLBACK, responseDeadline, false)
             .andExpect(status().isOk())
             .andReturn();

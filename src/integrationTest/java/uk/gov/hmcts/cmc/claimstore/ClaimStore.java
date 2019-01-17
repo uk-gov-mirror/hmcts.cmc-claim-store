@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.cmc.claimstore.processors.JsonMapper;
 import uk.gov.hmcts.cmc.claimstore.repositories.ClaimRepository;
 import uk.gov.hmcts.cmc.claimstore.repositories.OffersRepository;
+import uk.gov.hmcts.cmc.claimstore.repositories.TestingSupportRepository;
 import uk.gov.hmcts.cmc.claimstore.services.IssueDateCalculator;
 import uk.gov.hmcts.cmc.claimstore.services.ResponseDeadlineCalculator;
 import uk.gov.hmcts.cmc.domain.models.Claim;
@@ -27,6 +28,9 @@ public class ClaimStore {
 
     @Autowired
     private ClaimRepository claimRepository;
+
+    @Autowired
+    private TestingSupportRepository supportRepository;
 
     @Autowired
     private OffersRepository offersRepository;
@@ -64,7 +68,8 @@ public class ClaimStore {
             LocalDate.now(),
             responseDeadline,
             claimData.getExternalId().toString(),
-            SampleClaim.SUBMITTER_EMAIL
+            SampleClaim.SUBMITTER_EMAIL,
+            "[\"admissions\"]"
         );
 
         logger.debug("Saved claim has been given ID {}.", claimId);
@@ -85,12 +90,25 @@ public class ClaimStore {
         return getClaimByExternalId(claim.getExternalId());
     }
 
+    public void updateResponseDeadline(String externalId) {
+        logger.debug("Updating response deadline for claim : {}", externalId);
+
+        this.supportRepository.updateResponseDeadline(
+            externalId,
+            LocalDate.now().minusMonths(1)
+        );
+
+        logger.debug("Saved county court judgement");
+
+    }
+
     public Claim saveCountyCourtJudgement(String externalId, CountyCourtJudgment ccj) {
         logger.debug("Saving county court judgement with claim : {}", externalId);
 
         this.claimRepository.saveCountyCourtJudgment(
             externalId,
-            jsonMapper.toJson(ccj)
+            jsonMapper.toJson(ccj),
+            LocalDateTimeFactory.nowInUTC()
         );
 
         logger.debug("Saved county court judgement");

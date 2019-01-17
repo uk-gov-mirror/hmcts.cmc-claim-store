@@ -5,7 +5,17 @@ public enum CaseEvent {
     SUBMIT_PRE_PAYMENT("SubmitPrePayment"),
     SUBMIT_POST_PAYMENT("SubmitPostPayment"),
     DEFAULT_CCJ_REQUESTED("DefaultCCJRequested"),
-    DEFENCE_SUBMITTED("DefenceSubmitted"),
+    DISPUTE("DisputesAll"),
+    ALREADY_PAID("StatesPaid"),
+    FULL_ADMISSION("AdmitAll"),
+    PART_ADMISSION("AdmitPart"),
+    DIRECTIONS_QUESTIONNAIRE_DEADLINE("DirectionsQuestionnaireDeadline"),
+    CLAIMANT_RESPONSE_ACCEPTATION("ClaimantAccepts"),
+    CLAIMANT_RESPONSE_REJECTION("ClaimantRejects"),
+    CCJ_REQUESTED("CCJRequested"),
+    INTERLOCATORY_JUDGEMENT("InterlocatoryJudgement"),
+    REJECT_ORGANISATION_PAYMENT_PLAN("RejectOrganisationPaymentPlan"),
+    AGREEMENT_SIGNED_BY_CLAIMANT("AgreementSignedByClaimant"),
     MORE_TIME_REQUESTED_ONLINE("MoreTimeRequestedOnline"),
     MORE_TIME_REQUESTED_PAPER("MoreTimeRequestedPaper"),
     TEST_SUPPORT_UPDATE("TestSupportUpdate"),
@@ -16,7 +26,8 @@ public enum CaseEvent {
     OFFER_MADE_BY_CLAIMANT("OfferMadeByClaimant"),
     OFFER_MADE_BY_DEFENDANT("OfferMadeByDefendant"),
     SETTLED_PRE_JUDGMENT("SettledPreJudgment"),
-    LINK_DEFENDANT("LinkDefendant");
+    LINK_DEFENDANT("LinkDefendant"),
+    LINK_SEALED_CLAIM("LinkSealedClaimDocument");
 
     private String value;
 

@@ -10,6 +10,7 @@ import uk.gov.hmcts.cmc.claimstore.repositories.mapping.ClaimMapper;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,10 +19,10 @@ import java.util.Optional;
 public interface ClaimRepository {
 
     @SuppressWarnings("squid:S1214") // Pointless to create class for this
-    String SELECT_FROM_STATEMENT = "SELECT * FROM claim";
+        String SELECT_FROM_STATEMENT = "SELECT * FROM claim";
 
     @SuppressWarnings("squid:S1214") // Pointless to create class for this
-    String ORDER_BY_ID_DESCENDING = " ORDER BY claim.id DESC";
+        String ORDER_BY_ID_DESCENDING = " ORDER BY claim.id DESC";
 
     @SqlQuery(SELECT_FROM_STATEMENT + ORDER_BY_ID_DESCENDING)
     List<Claim> findAll();
@@ -40,9 +41,15 @@ public interface ClaimRepository {
     @SqlQuery(SELECT_FROM_STATEMENT + " WHERE claim.defendant_id = :defendantId" + ORDER_BY_ID_DESCENDING)
     List<Claim> getByDefendantId(@Bind("defendantId") String defendantId);
 
+    @SqlQuery(SELECT_FROM_STATEMENT + " WHERE claim.submitter_email = :submitterEmail")
+    List<Claim> getBySubmitterEmail(@Bind("submitterEmail") String submitterEmail);
+
+    @SqlQuery(SELECT_FROM_STATEMENT + " WHERE claim.defendant_email = :defendantEmail")
+    List<Claim> getByDefendantEmail(@Bind("defendantEmail") String defendantEmail);
+
     @SingleValueResult
     @SqlQuery(SELECT_FROM_STATEMENT + " WHERE claim.reference_number = :claimReferenceNumber")
-    Optional<Claim> getByClaimReferenceNumberAnonymous(@Bind("claimReferenceNumber") String claimReferenceNumber);
+    Optional<Claim> getByClaimReferenceNumber(@Bind("claimReferenceNumber") String claimReferenceNumber);
 
     @SingleValueResult
     @SqlQuery(SELECT_FROM_STATEMENT + " WHERE claim.reference_number = :claimReferenceNumber "
@@ -54,6 +61,9 @@ public interface ClaimRepository {
         + " AND claim.claim ->>'externalReferenceNumber' = :externalReference" + ORDER_BY_ID_DESCENDING)
     List<Claim> getByExternalReference(@Bind("externalReference") String externalReference,
                                        @Bind("submitterId") String submitterId);
+
+    @SqlQuery(SELECT_FROM_STATEMENT + " WHERE claim->'payment'->>'reference' = :payReference")
+    List<Claim> getByPaymentReference(@Bind("payReference") String payReference);
 
     @SqlQuery(SELECT_FROM_STATEMENT + " WHERE claim.is_migrated = false")
     List<Claim> getAllNotMigratedClaims();
@@ -70,7 +80,8 @@ public interface ClaimRepository {
         + "response_deadline, "
         + "external_id, "
         + "submitter_email, "
-        + "reference_number"
+        + "reference_number, "
+        + "features"
         + ") "
         + "VALUES ("
         + ":submitterId, "
@@ -79,7 +90,8 @@ public interface ClaimRepository {
         + ":responseDeadline, "
         + ":externalId, "
         + ":submitterEmail, "
-        + "next_legal_rep_reference_number()"
+        + "next_legal_rep_reference_number(), "
+        + ":features::JSONB"
         + ")")
     Long saveRepresented(
         @Bind("claim") String claim,
@@ -87,7 +99,8 @@ public interface ClaimRepository {
         @Bind("issuedOn") LocalDate issuedOn,
         @Bind("responseDeadline") LocalDate responseDeadline,
         @Bind("externalId") String externalId,
-        @Bind("submitterEmail") String submitterEmail
+        @Bind("submitterEmail") String submitterEmail,
+        @Bind("features") String features
     );
 
     @GetGeneratedKeys
@@ -99,7 +112,8 @@ public interface ClaimRepository {
         + "response_deadline, "
         + "external_id, "
         + "submitter_email, "
-        + "reference_number"
+        + "reference_number, "
+        + "features"
         + ") "
         + "VALUES ("
         + ":submitterId, "
@@ -109,7 +123,8 @@ public interface ClaimRepository {
         + ":responseDeadline, "
         + ":externalId, "
         + ":submitterEmail, "
-        + "next_reference_number()"
+        + "next_reference_number(), "
+        + ":features::JSONB"
         + ")")
     Long saveSubmittedByClaimant(
         @Bind("claim") String claim,
@@ -118,7 +133,8 @@ public interface ClaimRepository {
         @Bind("issuedOn") LocalDate issuedOn,
         @Bind("responseDeadline") LocalDate responseDeadline,
         @Bind("externalId") String externalId,
-        @Bind("submitterEmail") String submitterEmail
+        @Bind("submitterEmail") String submitterEmail,
+        @Bind("features") String features
     );
 
     @SqlUpdate(
@@ -160,20 +176,61 @@ public interface ClaimRepository {
         @Bind("response") String response
     );
 
-    @SqlUpdate("UPDATE claim SET "
-        + " county_court_judgment = :countyCourtJudgmentData::JSONB,"
-        + " county_court_judgment_requested_at = now() at time zone 'utc'"
-        + " WHERE external_id = :externalId")
-    void saveCountyCourtJudgment(
+    @SqlUpdate(
+        "UPDATE CLAIM SET "
+            + "claimant_response = :response::JSONB, "
+            + "claimant_responded_at = now() AT TIME ZONE 'utc' "
+            + "WHERE external_id = :externalId"
+    )
+    void saveClaimantResponse(
         @Bind("externalId") String externalId,
-        @Bind("countyCourtJudgmentData") String countyCourtJudgmentData
+        @Bind("response") String response
     );
 
     @SqlUpdate(
-        "UPDATE claim SET defendant_id = :defendantId WHERE letter_holder_id = :letterHolderId AND defendant_id is null"
+        "UPDATE claim SET money_received_on = :moneyReceivedOn "
+            + "WHERE external_id = :externalId"
+    )
+    void updateMoneyReceivedOn(
+        @Bind("externalId") String externalId,
+        @Bind("moneyReceivedOn") LocalDate moneyReceivedOn
+    );
+
+    @SqlUpdate("UPDATE claim SET "
+        + " directions_questionnaire_deadline = :dqDeadline"
+        + " WHERE external_id = :externalId")
+    void updateDirectionsQuestionnaireDeadline(
+        @Bind("externalId") String externalId,
+        @Bind("dqDeadline") LocalDate dqDeadline
+    );
+
+    @SqlUpdate("UPDATE claim SET "
+        + " county_court_judgment = :countyCourtJudgmentData::JSONB,"
+        + " county_court_judgment_requested_at = :ccjRequestedAt"
+        + " WHERE external_id = :externalId")
+    void saveCountyCourtJudgment(
+        @Bind("externalId") String externalId,
+        @Bind("countyCourtJudgmentData") String countyCourtJudgmentData,
+        @Bind("ccjRequestedAt") LocalDateTime ccjRequestedAt
+    );
+
+    @SqlUpdate("UPDATE claim SET "
+        + " re_determination = :reDetermination::JSONB,"
+        + " re_determination_requested_at = now() AT TIME ZONE 'utc' "
+        + " WHERE external_id = :externalId")
+    void saveReDetermination(
+        @Bind("externalId") String externalId,
+        @Bind("reDetermination") String reDetermination);
+
+    @SqlUpdate(
+        "UPDATE claim SET "
+            + "defendant_id = :defendantId,"
+            + "defendant_email = :defendantEmail "
+            + "WHERE letter_holder_id = :letterHolderId AND defendant_id is null"
     )
     Integer linkDefendant(
         @Bind("letterHolderId") String letterHolderId,
-        @Bind("defendantId") String defendantId
+        @Bind("defendantId") String defendantId,
+        @Bind("defendantEmail") String defendantEmail
     );
 }

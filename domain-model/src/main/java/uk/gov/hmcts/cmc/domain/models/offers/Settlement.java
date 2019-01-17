@@ -1,17 +1,18 @@
 package uk.gov.hmcts.cmc.domain.models.offers;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import uk.gov.hmcts.cmc.domain.exceptions.IllegalSettlementStatementException;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import static java.lang.String.format;
 import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 
+@EqualsAndHashCode
 public class Settlement {
 
     private static final String NO_STATEMENTS_MADE = "No statements have yet been made during that settlement";
@@ -27,8 +28,13 @@ public class Settlement {
         partyStatements.add(new PartyStatement(StatementType.ACCEPTATION, party));
     }
 
+    public void acceptCourtDetermination(MadeBy party) {
+        assertOfferCanBeAccepted();
+        partyStatements.add(new PartyStatement(StatementType.ACCEPTATION, party));
+    }
+
     public void reject(MadeBy party) {
-        assertOfferCanBeResponded(party);
+        assertOfferCanBeRejected(party);
         partyStatements.add(new PartyStatement(StatementType.REJECTION, party));
     }
 
@@ -38,7 +44,7 @@ public class Settlement {
     }
 
     @JsonIgnore
-    PartyStatement getLastStatement() {
+    public PartyStatement getLastStatement() {
         if (partyStatements.isEmpty()) {
             throw new IllegalSettlementStatementException(NO_STATEMENTS_MADE);
         }
@@ -61,6 +67,12 @@ public class Settlement {
 
     }
 
+    @JsonIgnore
+    public boolean isSettlementThroughAdmissions() {
+        return getLastOfferStatement().getOffer().orElseThrow(IllegalStateException::new)
+            .getPaymentIntention().isPresent();
+    }
+
     public List<PartyStatement> getPartyStatements() {
         return Collections.unmodifiableList(partyStatements);
     }
@@ -74,6 +86,21 @@ public class Settlement {
     private void assertOfferCanBeResponded(MadeBy party) {
         assertOfferCanBeMadeBy(party);
 
+        assertOfferCanBeAccepted();
+    }
+
+    private void assertOfferCanBeRejected(MadeBy party) {
+        assertOfferCanBeMadeBy(party);
+
+        if (!lastStatementIsOffer() && !lastStatementIsAcceptationNotBy(party)) {
+            throw new IllegalSettlementStatementException(
+                format("Last statement was: %s, offer or acceptation expected.",
+                    getLastStatement().getType().name().toLowerCase())
+            );
+        }
+    }
+
+    private void assertOfferCanBeAccepted() {
         if (!lastStatementIsOffer()) {
             throw new IllegalSettlementStatementException(
                 format("Last statement was: %s , offer expected.", getLastStatement().getType().name().toLowerCase())
@@ -109,20 +136,4 @@ public class Settlement {
         return ReflectionToStringBuilder.toString(this, ourStyle());
     }
 
-    @Override
-    public boolean equals(Object input) {
-        if (this == input) {
-            return true;
-        }
-        if (input == null || getClass() != input.getClass()) {
-            return false;
-        }
-        Settlement that = (Settlement) input;
-        return Objects.equals(partyStatements, that.partyStatements);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(partyStatements);
-    }
 }

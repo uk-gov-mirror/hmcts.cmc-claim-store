@@ -2,16 +2,19 @@ package uk.gov.hmcts.cmc.domain.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.hibernate.validator.constraints.NotBlank;
 import uk.gov.hmcts.ccd.definition.FieldLabel;
 
 import java.math.BigDecimal;
-import java.util.Objects;
 import javax.validation.constraints.NotNull;
 
 import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 
+@Builder
+@EqualsAndHashCode
 @JsonIgnoreProperties(value = {"description", "state"})
 @FieldLabel("Payment")
 public class Payment {
@@ -65,28 +68,6 @@ public class Payment {
 
     public String getDateCreated() {
         return dateCreated;
-    }
-
-    @Override
-    @SuppressWarnings("squid:S1067") // Its generated code for equals sonar
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        Payment payment = (Payment) obj;
-        return Objects.equals(id, payment.id)
-            && Objects.equals(amount, payment.amount)
-            && Objects.equals(reference, payment.reference)
-            && Objects.equals(dateCreated, payment.dateCreated)
-            && Objects.equals(status, payment.status);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, amount, reference, dateCreated, status);
     }
 
     @Override

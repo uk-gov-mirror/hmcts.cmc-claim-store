@@ -1,7 +1,6 @@
 package uk.gov.hmcts.cmc.domain.models;
 
 import org.junit.Test;
-import uk.gov.hmcts.cmc.domain.models.ccj.PaymentOption;
 import uk.gov.hmcts.cmc.domain.models.sampledata.SampleCountyCourtJudgment;
 import uk.gov.hmcts.cmc.domain.models.sampledata.SampleRepaymentPlan;
 
@@ -26,8 +25,8 @@ public class CountyCourtJudgmentTest {
     public void shouldBeInvalidForNullLineOne() {
         //given
         CountyCourtJudgment ccj = SampleCountyCourtJudgment.builder()
-            .withRepaymentPlan(SampleRepaymentPlan.builder().build())
-            .withPaymentOption(PaymentOption.IMMEDIATELY)
+            .paymentOption(PaymentOption.IMMEDIATELY)
+            .repaymentPlan(SampleRepaymentPlan.builder().build())
             .build();
         //when
         Set<String> errors = validate(ccj);

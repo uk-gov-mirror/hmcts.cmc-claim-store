@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @TestPropertySource(
     properties = {
-        "document_management.api_gateway.url=false",
+        "document_management.url=false",
         "core_case_data.api.url=false",
         "send-letter.url=http://localhost:${wiremock.server.port}"
     }
@@ -56,7 +56,7 @@ public class BulkPrintRequestTest extends BaseSaveTest {
             )
         );
 
-        MvcResult result = makeRequest(SampleClaimData.submittedByClaimant())
+        MvcResult result = makeIssueClaimRequest(SampleClaimData.submittedByClaimant(), AUTHORISATION_TOKEN)
             .andExpect(status().isOk())
             .andReturn();
 
@@ -76,7 +76,7 @@ public class BulkPrintRequestTest extends BaseSaveTest {
             )
         );
 
-        MvcResult result = makeRequest(SampleClaimData.submittedByClaimant())
+        MvcResult result = makeIssueClaimRequest(SampleClaimData.submittedByClaimant(), AUTHORISATION_TOKEN)
             .andExpect(status().isOk())
             .andReturn();
 
@@ -96,7 +96,7 @@ public class BulkPrintRequestTest extends BaseSaveTest {
                 .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .withBody("Internal server error occurred")));
 
-        MvcResult result = makeRequest(SampleClaimData.submittedByClaimant())
+        MvcResult result = makeIssueClaimRequest(SampleClaimData.submittedByClaimant(), AUTHORISATION_TOKEN)
             .andExpect(status().isOk())
             .andReturn();
 

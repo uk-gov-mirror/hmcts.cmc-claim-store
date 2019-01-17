@@ -9,10 +9,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.ResultActions;
 import uk.gov.hmcts.cmc.claimstore.BaseSaveTest;
+import uk.gov.hmcts.cmc.claimstore.idam.models.User;
+import uk.gov.hmcts.cmc.claimstore.idam.models.UserDetails;
 import uk.gov.hmcts.cmc.claimstore.services.notifications.fixtures.SampleUser;
 import uk.gov.hmcts.cmc.claimstore.services.notifications.fixtures.SampleUserDetails;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 import uk.gov.hmcts.cmc.domain.models.CountyCourtJudgment;
+import uk.gov.hmcts.cmc.domain.models.CountyCourtJudgmentType;
 import uk.gov.hmcts.cmc.domain.models.offers.MadeBy;
 import uk.gov.hmcts.cmc.domain.models.offers.Settlement;
 import uk.gov.hmcts.cmc.domain.models.response.Response;
@@ -38,13 +41,14 @@ import static uk.gov.hmcts.cmc.domain.utils.DatesProvider.RESPONSE_DEADLINE;
 
 @TestPropertySource(
     properties = {
-        "document_management.api_gateway.url=false",
-        "core_case_data.api.url=false",
+        "document_management.url=false",
+        "feature_toggles.ccd_enabled=false",
         "feature_toggles.emailToStaff=false"
     }
 )
 public class StaffEmailServiceWithNotificationDisabledTest extends BaseSaveTest {
 
+    public static final String DEFENDANT_BEARER_TOKEN = "token";
     @MockBean
     protected SendLetterApi sendLetterApi;
 
@@ -72,7 +76,7 @@ public class StaffEmailServiceWithNotificationDisabledTest extends BaseSaveTest 
 
     @Test
     public void shouldNotSendStaffNotificationsForCitizenClaimIssuedEvent() throws Exception {
-        makeRequest(SampleClaimData.submittedByClaimant())
+        makeIssueClaimRequest(SampleClaimData.submittedByClaimant(), AUTHORISATION_TOKEN)
             .andExpect(status().isOk())
             .andReturn();
 
@@ -80,8 +84,11 @@ public class StaffEmailServiceWithNotificationDisabledTest extends BaseSaveTest 
     }
 
     @Test
-    public void shouldNotSendStaffNotificationWhenCCJRequestSubmitted() throws Exception {
-        CountyCourtJudgment countyCourtJudgment = SampleCountyCourtJudgment.builder().build();
+    public void shouldNotSendStaffNotificationWhenDefaultCCJRequestSubmitted() throws Exception {
+        CountyCourtJudgment countyCourtJudgment = SampleCountyCourtJudgment
+            .builder()
+            .ccjType(CountyCourtJudgmentType.DEFAULT)
+            .build();
 
         makeRequest(claim.getExternalId(), countyCourtJudgment).andExpect(status().isOk());
 
@@ -100,7 +107,7 @@ public class StaffEmailServiceWithNotificationDisabledTest extends BaseSaveTest 
     @Test
     public void shouldNotSendStaffNotificationWhenCounterSignRequestSubmitted() throws Exception {
         Settlement settlement = new Settlement();
-        settlement.makeOffer(SampleOffer.validDefaults(), MadeBy.DEFENDANT);
+        settlement.makeOffer(SampleOffer.builder().build(), MadeBy.DEFENDANT);
         claim = claimStore.makeOffer(claim.getExternalId(), settlement);
 
         settlement.accept(MadeBy.CLAIMANT);
@@ -141,6 +148,15 @@ public class StaffEmailServiceWithNotificationDisabledTest extends BaseSaveTest 
 
     @Test
     public void shouldNotSendStaffNotificationsForDefendantRequestedMoreTimeEvent() throws Exception {
+        UserDetails userDetails = SampleUserDetails.builder()
+            .withUserId(DEFENDANT_ID)
+            .withMail("defendant@example.com")
+            .withRoles("letter-" + claim.getLetterHolderId())
+            .build();
+
+        given(userService.getUser(DEFENDANT_BEARER_TOKEN)).willReturn(new User(DEFENDANT_BEARER_TOKEN, userDetails));
+        given(userService.getUserDetails(DEFENDANT_BEARER_TOKEN)).willReturn(userDetails);
+
         Claim claim = SampleClaim.builder()
             .withExternalId(UUID.randomUUID().toString())
             .withClaimData(SampleClaimData.validDefaults())
@@ -162,7 +178,7 @@ public class StaffEmailServiceWithNotificationDisabledTest extends BaseSaveTest 
         return webClient
             .perform(post("/responses/claim/" + externalId + "/defendant/" + DEFENDANT_ID)
                 .header(HttpHeaders.CONTENT_TYPE, "application/json")
-                .header(HttpHeaders.AUTHORIZATION, "token")
+                .header(HttpHeaders.AUTHORIZATION, DEFENDANT_BEARER_TOKEN)
                 .content(jsonMapper.toJson(response))
             );
     }

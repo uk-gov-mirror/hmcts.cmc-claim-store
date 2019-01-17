@@ -2,13 +2,13 @@ package uk.gov.hmcts.cmc.claimstore.controllers;
 
 import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
 import uk.gov.hmcts.cmc.claimstore.BaseGetTest;
 import uk.gov.hmcts.cmc.claimstore.idam.models.User;
 import uk.gov.hmcts.cmc.claimstore.idam.models.UserDetails;
-import uk.gov.hmcts.cmc.claimstore.repositories.CCDCaseApi;
 import uk.gov.hmcts.cmc.claimstore.services.notifications.fixtures.SampleUserDetails;
 import uk.gov.hmcts.cmc.claimstore.utils.ResourceLoader;
 import uk.gov.hmcts.cmc.domain.models.Claim;
@@ -26,17 +26,17 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static uk.gov.hmcts.cmc.claimstore.repositories.CCDCaseApi.CASE_TYPE_ID;
-import static uk.gov.hmcts.cmc.claimstore.repositories.CCDCaseApi.JURISDICTION_ID;
 import static uk.gov.hmcts.cmc.claimstore.utils.ResourceLoader.caseWithReferenceNumber;
 import static uk.gov.hmcts.cmc.claimstore.utils.ResourceLoader.listOfCaseDetails;
 
 @TestPropertySource(
     properties = {
-        "document_management.api_gateway.url=false",
-        "core_case_data.api.url=http://core-case-data-api"
+        "document_management.url=false",
+        "feature_toggles.ccd_async_enabled=false",
+        "feature_toggles.ccd_enabled=true"
     }
 )
+@Ignore
 public class GetClaimsByClaimantIdFromCoreCaseDataStoreTest extends BaseGetTest {
     private static final String SERVICE_TOKEN = "S2S token";
     private static final String USER_ID = "1";
@@ -81,7 +81,7 @@ public class GetClaimsByClaimantIdFromCoreCaseDataStoreTest extends BaseGetTest 
 
         assertThat(deserializeListFrom(result))
             .hasSize(1).first()
-            .extracting(Claim::getSubmitterId).containsExactly(submitterId);
+            .extracting(Claim::getSubmitterId).isEqualTo(submitterId);
 
         verify(coreCaseDataApi)
             .searchForCitizen(
@@ -130,8 +130,7 @@ public class GetClaimsByClaimantIdFromCoreCaseDataStoreTest extends BaseGetTest 
         return ImmutableMap.of(
             "case.submitterId", USER_ID,
             "page", String.valueOf(page),
-            "sortDirection", "desc",
-            "state", CCDCaseApi.CaseState.OPEN.getValue()
+            "sortDirection", "desc"
         );
     }
 

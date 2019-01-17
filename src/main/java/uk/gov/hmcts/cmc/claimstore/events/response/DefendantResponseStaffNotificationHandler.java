@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.cmc.claimstore.services.staff.DefendantResponseStaffNotificationService;
+import uk.gov.hmcts.cmc.domain.models.Claim;
 
 @Component
 @ConditionalOnProperty(prefix = "feature_toggles", name = "emailToStaff")
@@ -20,8 +21,9 @@ public class DefendantResponseStaffNotificationHandler {
 
     @EventListener
     public void onDefendantResponseSubmitted(DefendantResponseEvent event) {
+        Claim claim = event.getClaim();
         defendantResponseStaffNotificationService.notifyStaffDefenceSubmittedFor(
-            event.getClaim(),
+            claim,
             event.getUserEmail()
         );
     }

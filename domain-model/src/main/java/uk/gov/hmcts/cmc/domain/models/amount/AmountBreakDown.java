@@ -1,7 +1,9 @@
 package uk.gov.hmcts.cmc.domain.models.amount;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import uk.gov.hmcts.ccd.definition.FieldLabel;
 import uk.gov.hmcts.cmc.domain.constraints.MinTotalAmount;
@@ -16,6 +18,8 @@ import javax.validation.constraints.Size;
 
 import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 
+@Builder
+@EqualsAndHashCode
 @FieldLabel(value = "Breakdown")
 public class AmountBreakDown implements Amount {
 
@@ -26,8 +30,7 @@ public class AmountBreakDown implements Amount {
     @FieldLabel(value = "Row")
     private final List<AmountRow> rows;
 
-    @JsonCreator
-    public AmountBreakDown(List<AmountRow> rows) {
+    public AmountBreakDown(@JsonProperty("rows") List<AmountRow> rows) {
         this.rows = rows;
     }
 
@@ -41,23 +44,6 @@ public class AmountBreakDown implements Amount {
 
     public List<AmountRow> getRows() {
         return rows;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (other == null || getClass() != other.getClass()) {
-            return false;
-        }
-        AmountBreakDown that = (AmountBreakDown) other;
-        return Objects.equals(rows, that.rows);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(rows);
     }
 
     @Override

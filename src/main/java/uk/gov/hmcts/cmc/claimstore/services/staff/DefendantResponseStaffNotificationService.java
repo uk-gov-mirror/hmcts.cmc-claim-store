@@ -4,38 +4,52 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.cmc.claimstore.config.properties.emails.StaffEmailProperties;
 import uk.gov.hmcts.cmc.claimstore.documents.DefendantResponseReceiptService;
-import uk.gov.hmcts.cmc.claimstore.services.staff.content.DefendantResponseStaffNotificationEmailContentProvider;
+import uk.gov.hmcts.cmc.claimstore.services.staff.content.DefendantAdmissionStaffEmailContentProvider;
+import uk.gov.hmcts.cmc.claimstore.services.staff.content.FullDefenceStaffEmailContentProvider;
 import uk.gov.hmcts.cmc.claimstore.services.staff.models.EmailContent;
 import uk.gov.hmcts.cmc.domain.models.Claim;
+import uk.gov.hmcts.cmc.domain.models.response.FullAdmissionResponse;
+import uk.gov.hmcts.cmc.domain.models.response.PartAdmissionResponse;
+import uk.gov.hmcts.cmc.domain.models.response.PaymentIntention;
+import uk.gov.hmcts.cmc.domain.models.response.Response;
+import uk.gov.hmcts.cmc.domain.models.response.ResponseType;
+import uk.gov.hmcts.cmc.email.EmailAttachment;
 import uk.gov.hmcts.cmc.email.EmailData;
 import uk.gov.hmcts.cmc.email.EmailService;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
-import static java.lang.String.format;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNull;
+import static uk.gov.hmcts.cmc.claimstore.documents.output.PDF.EXTENSION;
+import static uk.gov.hmcts.cmc.claimstore.utils.DocumentNameUtils.buildResponseFileBaseName;
+import static uk.gov.hmcts.cmc.domain.models.response.ResponseType.FULL_ADMISSION;
+import static uk.gov.hmcts.cmc.domain.models.response.ResponseType.PART_ADMISSION;
+import static uk.gov.hmcts.cmc.domain.utils.PartyUtils.isCompanyOrOrganisation;
 import static uk.gov.hmcts.cmc.email.EmailAttachment.pdf;
 
 @Service
 public class DefendantResponseStaffNotificationService {
 
-    public static final String FILE_NAME_FORMAT = "%s-claim-response.pdf";
-
     private final EmailService emailService;
     private final StaffEmailProperties emailProperties;
-    private final DefendantResponseStaffNotificationEmailContentProvider emailContentProvider;
+    private final FullDefenceStaffEmailContentProvider fullDefenceStaffEmailContentProvider;
+    private final DefendantAdmissionStaffEmailContentProvider defendantAdmissionStaffEmailContentProvider;
     private final DefendantResponseReceiptService defendantResponseReceiptService;
 
     @Autowired
     public DefendantResponseStaffNotificationService(
         EmailService emailService,
         StaffEmailProperties emailProperties,
-        DefendantResponseStaffNotificationEmailContentProvider emailContentProvider,
+        FullDefenceStaffEmailContentProvider fullDefenceStaffEmailContentProvider,
+        DefendantAdmissionStaffEmailContentProvider defendantAdmissionStaffEmailContentProvider,
         DefendantResponseReceiptService defendantResponseReceiptService) {
         this.emailService = emailService;
         this.emailProperties = emailProperties;
-        this.emailContentProvider = emailContentProvider;
+        this.fullDefenceStaffEmailContentProvider = fullDefenceStaffEmailContentProvider;
+        this.defendantAdmissionStaffEmailContentProvider = defendantAdmissionStaffEmailContentProvider;
         this.defendantResponseReceiptService = defendantResponseReceiptService;
     }
 
@@ -43,22 +57,30 @@ public class DefendantResponseStaffNotificationService {
         Claim claim,
         String defendantEmail
     ) {
-        EmailContent emailContent = emailContentProvider.createContent(
-            wrapInMap(claim, defendantEmail)
-        );
-        byte[] defendantResponse = defendantResponseReceiptService.createPdf(claim);
+        ResponseType responseType = claim.getResponse().orElseThrow(IllegalArgumentException::new).getResponseType();
+        EmailContent emailContent;
+
+        emailContent = isFullAdmission(responseType) || isPartAdmission(responseType)
+            ? defendantAdmissionStaffEmailContentProvider.createContent(wrapInMap(claim, defendantEmail))
+            : fullDefenceStaffEmailContentProvider.createContent(wrapInMap(claim, defendantEmail));
+
         emailService.sendEmail(
             emailProperties.getSender(),
             new EmailData(
                 emailProperties.getRecipient(),
                 emailContent.getSubject(),
                 emailContent.getBody(),
-                singletonList(pdf(
-                    defendantResponse,
-                    format(FILE_NAME_FORMAT, claim.getReferenceNumber())
-                ))
+                singletonList(createResponsePdfAttachment(claim))
             )
         );
+    }
+
+    private static boolean isPartAdmission(ResponseType responseType) {
+        return responseType == PART_ADMISSION;
+    }
+
+    private static boolean isFullAdmission(ResponseType responseType) {
+        return responseType == FULL_ADMISSION;
     }
 
     public static Map<String, Object> wrapInMap(
@@ -66,15 +88,43 @@ public class DefendantResponseStaffNotificationService {
         String defendantEmail
     ) {
         Map<String, Object> map = new HashMap<>();
+
+        Response response = claim.getResponse().orElseThrow(IllegalStateException::new);
         map.put("claim", claim);
-        map.put("response", claim.getResponse().orElseThrow(IllegalStateException::new));
+        map.put("response", response);
         map.put("defendantEmail", defendantEmail);
-        map.put("defendantMobilePhone", claim.getResponse()
-            .orElseThrow(IllegalStateException::new)
+        map.put("defendantMobilePhone", response
             .getDefendant()
             .getMobilePhone()
             .orElse(null));
+        map.put("isCompanyOrOrganisation", isCompanyOrOrganisation(response.getDefendant()));
+
+        if (isFullAdmission(response.getResponseType())) {
+            FullAdmissionResponse fullAdmissionResponse = (FullAdmissionResponse) response;
+            map.put("responseType", "full admission");
+            map.put("admissionPaymentIntention", fullAdmissionResponse.getPaymentIntention() != null);
+            map.put("paymentOptionDescription", fullAdmissionResponse.getPaymentIntention()
+                .getPaymentOption().getDescription().toLowerCase());
+        }
+
+        if (isPartAdmission(response.getResponseType())) {
+            PartAdmissionResponse partAdmissionResponse = (PartAdmissionResponse) response;
+
+            map.put("responseType", "partial admission");
+            Optional<PaymentIntention> responsePaymentIntention = partAdmissionResponse.getPaymentIntention();
+            map.put("admissionPaymentIntention", responsePaymentIntention.isPresent());
+            responsePaymentIntention.ifPresent(paymentIntention ->
+                map.put("paymentOptionDescription", paymentIntention.getPaymentOption()
+                    .getDescription().toLowerCase()));
+        }
+
         return map;
     }
 
+    private EmailAttachment createResponsePdfAttachment(Claim claim) {
+        byte[] defendantResponse = defendantResponseReceiptService.createPdf(claim);
+        requireNonNull(defendantResponse);
+
+        return pdf(defendantResponse, buildResponseFileBaseName(claim.getReferenceNumber()) + EXTENSION);
+    }
 }

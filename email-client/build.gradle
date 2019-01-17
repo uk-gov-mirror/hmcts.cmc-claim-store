@@ -1,4 +1,5 @@
 apply plugin: 'jacoco'
+apply plugin: 'net.ltgt.apt'
 
 buildscript {
   repositories {
@@ -14,14 +15,17 @@ dependencies {
   compile group: 'org.springframework.boot', name: 'spring-boot-starter'
   compile group: 'org.springframework.boot', name: 'spring-boot-starter-mail'
   compile group: 'org.springframework.boot', name: 'spring-boot-starter-json'
-  compile group: 'org.springframework.retry', name: 'spring-retry', version: '1.2.2.RELEASE'
+  compile group: 'org.springframework.retry', name: 'spring-retry', version: '1.2.3.RELEASE'
 
   compile group: 'org.hibernate', name: 'hibernate-validator', version: versions.hibernateValidator
 
+  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.4'
+  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.2'
+  
   testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test'
   testCompile group: 'commons-io', name: 'commons-io', version: '2.6'
-  testCompile group: 'com.icegreen', name: 'greenmail', version: '1.5.7'
+  testCompile group: 'com.icegreen', name: 'greenmail', version: '1.5.9'
 
-  testCompile group: 'org.mockito', name: 'mockito-core', version: '2.15.0'
+  testCompile group: 'org.mockito', name: 'mockito-core', version: '2.23.4'
 }
 

@@ -6,15 +6,133 @@ import uk.gov.hmcts.cmc.domain.models.legalrep.StatementOfTruth;
 import uk.gov.hmcts.cmc.domain.models.party.Party;
 import uk.gov.hmcts.cmc.domain.models.response.DefenceType;
 import uk.gov.hmcts.cmc.domain.models.response.DefendantTimeline;
+import uk.gov.hmcts.cmc.domain.models.response.FullAdmissionResponse;
 import uk.gov.hmcts.cmc.domain.models.response.FullDefenceResponse;
+import uk.gov.hmcts.cmc.domain.models.response.PartAdmissionResponse;
 import uk.gov.hmcts.cmc.domain.models.response.Response;
 import uk.gov.hmcts.cmc.domain.models.response.YesNoOption;
+import uk.gov.hmcts.cmc.domain.models.sampledata.response.SamplePaymentIntention;
+import uk.gov.hmcts.cmc.domain.models.sampledata.statementofmeans.SampleStatementOfMeans;
+
+import java.math.BigDecimal;
 
 public abstract class SampleResponse<T extends SampleResponse<T>> {
 
+    public static final String USER_DEFENCE = "defence string";
+
+    public static class FullAdmission extends SampleResponse<FullAdmission> {
+        public static FullAdmission builder() {
+            return new FullAdmission();
+        }
+
+        public FullAdmissionResponse build() {
+            return FullAdmissionResponse.builder()
+                .moreTimeNeeded(YesNoOption.NO)
+                .defendant(SampleParty.builder().individual())
+                .paymentIntention(SamplePaymentIntention.instalments())
+                .statementOfMeans(SampleStatementOfMeans.builder().build())
+                .build();
+        }
+
+        public FullAdmissionResponse buildWithPaymentOptionBySpecifiedDate() {
+            return FullAdmissionResponse.builder()
+                .moreTimeNeeded(YesNoOption.NO)
+                .defendant(SampleParty.builder().individual())
+                .paymentIntention(SamplePaymentIntention.bySetDate())
+                .statementOfMeans(SampleStatementOfMeans.builder().build())
+                .build();
+        }
+
+        public FullAdmissionResponse buildWithPaymentOptionImmediately() {
+            return FullAdmissionResponse.builder()
+                .moreTimeNeeded(YesNoOption.NO)
+                .defendant(SampleParty.builder().individual())
+                .paymentIntention(SamplePaymentIntention.immediately())
+                .build();
+        }
+
+        public FullAdmissionResponse buildWithPaymentOptionInstalments() {
+            return FullAdmissionResponse.builder()
+                .moreTimeNeeded(YesNoOption.NO)
+                .defendant(SampleParty.builder().individual())
+                .paymentIntention(SamplePaymentIntention.instalments())
+                .build();
+        }
+    }
+
+    public static class PartAdmission extends SampleResponse<PartAdmission> {
+        public static PartAdmission builder() {
+            return new PartAdmission();
+        }
+
+        public PartAdmissionResponse build() {
+            return PartAdmissionResponse.builder()
+                .defendant(SampleParty.builder().individual())
+                .moreTimeNeeded(YesNoOption.NO)
+                .amount(BigDecimal.valueOf(120))
+                .paymentDeclaration(SamplePaymentDeclaration.builder().build())
+                .defence(USER_DEFENCE)
+                .timeline(SampleDefendantTimeline.validDefaults())
+                .evidence(SampleDefendantEvidence.validDefaults())
+                .build();
+        }
+
+        public PartAdmissionResponse buildWithPaymentOptionImmediately() {
+            return PartAdmissionResponse.builder()
+                .defendant(SampleParty.builder().individual())
+                .moreTimeNeeded(YesNoOption.NO)
+                .amount(BigDecimal.valueOf(120))
+                .paymentIntention(SamplePaymentIntention.immediately())
+                .defence(USER_DEFENCE)
+                .timeline(SampleDefendantTimeline.validDefaults())
+                .evidence(SampleDefendantEvidence.validDefaults())
+                .statementOfMeans(SampleStatementOfMeans.builder().build())
+                .build();
+        }
+
+        public PartAdmissionResponse buildWithPaymentOptionBySpecifiedDate() {
+            return PartAdmissionResponse.builder()
+                .defendant(SampleParty.builder().individual())
+                .moreTimeNeeded(YesNoOption.NO)
+                .amount(BigDecimal.valueOf(120))
+                .paymentIntention(SamplePaymentIntention.bySetDate())
+                .defence(USER_DEFENCE)
+                .timeline(SampleDefendantTimeline.validDefaults())
+                .evidence(SampleDefendantEvidence.validDefaults())
+                .statementOfMeans(SampleStatementOfMeans.builder().build())
+                .build();
+        }
+
+        public PartAdmissionResponse buildWithPaymentOptionInstalments() {
+            return PartAdmissionResponse.builder()
+                .defendant(SampleParty.builder().individual())
+                .moreTimeNeeded(YesNoOption.NO)
+                .amount(BigDecimal.valueOf(120))
+                .paymentIntention(SamplePaymentIntention.instalments())
+                .defence(USER_DEFENCE)
+                .timeline(SampleDefendantTimeline.validDefaults())
+                .evidence(SampleDefendantEvidence.validDefaults())
+                .statementOfMeans(SampleStatementOfMeans.builder().build())
+                .build();
+        }
+
+        public PartAdmissionResponse buildWithPaymentOptionInstalmentsAndParty(Party party) {
+            return PartAdmissionResponse.builder()
+                .defendant(party)
+                .moreTimeNeeded(YesNoOption.NO)
+                .amount(BigDecimal.valueOf(120))
+                .paymentIntention(SamplePaymentIntention.instalments())
+                .defence(USER_DEFENCE)
+                .timeline(SampleDefendantTimeline.validDefaults())
+                .evidence(SampleDefendantEvidence.validDefaults())
+                .statementOfMeans(SampleStatementOfMeans.builder().build())
+                .build();
+        }
+    }
+
     public static class FullDefence extends SampleResponse<FullDefence> {
         private DefenceType defenceType = DefenceType.DISPUTE;
-        private String defence = "defence string";
+        private String defence = USER_DEFENCE;
         private PaymentDeclaration paymentDeclaration = SamplePaymentDeclaration.builder().build();
         private DefendantTimeline timeline = SampleDefendantTimeline.validDefaults();
         private DefendantEvidence evidence = SampleDefendantEvidence.validDefaults();

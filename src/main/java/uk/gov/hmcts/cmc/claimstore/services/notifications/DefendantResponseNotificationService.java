@@ -12,7 +12,6 @@ import uk.gov.hmcts.cmc.claimstore.config.properties.notifications.EmailTemplate
 import uk.gov.hmcts.cmc.claimstore.config.properties.notifications.NotificationTemplates;
 import uk.gov.hmcts.cmc.claimstore.config.properties.notifications.NotificationsProperties;
 import uk.gov.hmcts.cmc.claimstore.services.FreeMediationDecisionDateCalculator;
-import uk.gov.hmcts.cmc.claimstore.utils.Formatting;
 import uk.gov.hmcts.cmc.domain.exceptions.NotificationException;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 import uk.gov.hmcts.cmc.domain.models.party.Company;
@@ -21,6 +20,7 @@ import uk.gov.hmcts.cmc.domain.models.party.Organisation;
 import uk.gov.hmcts.cmc.domain.models.party.Party;
 import uk.gov.hmcts.cmc.domain.models.party.SoleTrader;
 import uk.gov.hmcts.cmc.domain.models.response.Response;
+import uk.gov.hmcts.cmc.domain.models.response.ResponseType;
 import uk.gov.hmcts.cmc.domain.models.response.YesNoOption;
 import uk.gov.hmcts.cmc.domain.utils.PartyUtils;
 import uk.gov.service.notify.NotificationClient;
@@ -28,14 +28,15 @@ import uk.gov.service.notify.NotificationClientException;
 
 import java.time.LocalDate;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Predicate;
 
 import static uk.gov.hmcts.cmc.claimstore.utils.Formatting.formatDate;
-
+import static uk.gov.hmcts.cmc.claimstore.utils.ResponseHelper.admissionResponse;
 
 @Service
 public class DefendantResponseNotificationService {
-    private final Logger logger = LoggerFactory.getLogger(DefendantResponseNotificationService.class);
-
+    public static final String DQS_DEADLINE = "DQsdeadline";
     private static final String CLAIM_REFERENCE_NUMBER = "claimReferenceNumber";
     private static final String MEDIATION_DECISION_DEADLINE = "mediationDecisionDeadline";
     private static final String FREE_MEDIATION_REQUESTED = "freeMediationRequested";
@@ -46,6 +47,7 @@ public class DefendantResponseNotificationService {
     private static final String CLAIMANT_TYPE = "claimantType";
     private static final String ISSUED_ON = "issuedOn";
     private static final String RESPONSE_DEADLINE = "responseDeadline";
+    private static final Logger logger = LoggerFactory.getLogger(DefendantResponseNotificationService.class);
     private final NotificationClient notificationClient;
     private final FreeMediationDecisionDateCalculator freeMediationDecisionDateCalculator;
     private final NotificationsProperties notificationsProperties;
@@ -64,11 +66,18 @@ public class DefendantResponseNotificationService {
     public void notifyDefendant(Claim claim, String defendantEmail, String reference) {
         Map<String, String> parameters = aggregateParams(claim);
 
-        String template = getDefendantResponseIssuedEmailTemplate(claim.getClaimData().getClaimant());
+        String template = getDefendantResponseIssuedEmailTemplate(claim);
         notify(defendantEmail, template, parameters, reference);
     }
 
-    private String getDefendantResponseIssuedEmailTemplate(Party party) {
+    private String getDefendantResponseIssuedEmailTemplate(Claim claim) {
+        Party party = claim.getClaimData().getClaimant();
+        Response response = claim.getResponse().orElseThrow(() -> new IllegalStateException("Response expected"));
+
+        if (isFullDefenceAndNoMediation(response)) {
+            return getEmailTemplates().getDefendantResponseWithNoMediationIssued();
+        }
+
         if (party instanceof Individual || party instanceof SoleTrader) {
             return getEmailTemplates().getDefendantResponseIssuedToIndividual();
         } else if (party instanceof Company || party instanceof Organisation) {
@@ -78,13 +87,36 @@ public class DefendantResponseNotificationService {
         }
     }
 
+    private boolean isFullDefenceAndNoMediation(Response response) {
+        return response.getResponseType().equals(ResponseType.FULL_DEFENCE)
+            && response.getFreeMediation().filter(Predicate.isEqual(YesNoOption.NO)).isPresent();
+    }
+
     public void notifyClaimant(
         Claim claim,
         String reference
     ) {
-        Map<String, String> parameters = aggregateParams(claim, claim.getResponse()
-            .orElseThrow(IllegalStateException::new));
-        notify(claim.getSubmitterEmail(), getEmailTemplates().getClaimantResponseIssued(), parameters, reference);
+        Response response = claim.getResponse().orElseThrow(IllegalArgumentException::new);
+        Map<String, String> parameters = aggregateParams(claim, response);
+
+        String emailTemplate = getClaimantEmailTemplate(response);
+
+        notify(claim.getSubmitterEmail(), emailTemplate, parameters, reference);
+    }
+
+    private String getClaimantEmailTemplate(Response response) {
+        YesNoOption mediation = response.getFreeMediation().orElse(YesNoOption.YES);
+        if (admissionResponse(response)) {
+            return getEmailTemplates().getDefendantAdmissionResponseToClaimant();
+        }
+        if (mediation == YesNoOption.YES) {
+            return getEmailTemplates().getClaimantResponseWithMediationIssued();
+        } else {
+            if (isFullDefenceAndNoMediation(response)) {
+                return getEmailTemplates().getClaimantResponseWithNoMediationIssued();
+            }
+            return getEmailTemplates().getClaimantResponseIssued();
+        }
     }
 
     @Retryable(value = NotificationException.class, backoff = @Backoff(delay = 200))
@@ -94,7 +126,6 @@ public class DefendantResponseNotificationService {
         Map<String, String> parameters,
         String reference
     ) {
-
         try {
             notificationClient.sendEmail(emailTemplate, targetEmail, parameters, reference);
         } catch (NotificationClientException e) {
@@ -127,6 +158,13 @@ public class DefendantResponseNotificationService {
         parameters.put(FRONTEND_BASE_URL, notificationsProperties.getFrontendBaseUrl());
         parameters.put(CLAIM_REFERENCE_NUMBER, claim.getReferenceNumber());
 
+        Response response = claim.getResponse().orElse(null);
+        Objects.requireNonNull(response);
+
+        if (isFullDefenceAndNoMediation(response)) {
+            parameters.put(DQS_DEADLINE, formatDate(claim.getDirectionsQuestionnaireDeadline()));
+        }
+
         return parameters.build();
     }
 
@@ -148,8 +186,12 @@ public class DefendantResponseNotificationService {
         parameters.put(
             FREE_MEDIATION_NOT_REQUESTED, isFreeMediationApplicable && !isFreeMediationRequested ? "yes" : ""
         );
-        parameters.put(ISSUED_ON, Formatting.formatDate(claim.getIssuedOn()));
-        parameters.put(RESPONSE_DEADLINE, Formatting.formatDate(claim.getResponseDeadline()));
+        parameters.put(ISSUED_ON, formatDate(claim.getIssuedOn()));
+        parameters.put(RESPONSE_DEADLINE, formatDate(claim.getResponseDeadline()));
+
+        if (isFullDefenceAndNoMediation(response)) {
+            parameters.put(DQS_DEADLINE, formatDate(claim.getDirectionsQuestionnaireDeadline()));
+        }
 
         return parameters.build();
     }

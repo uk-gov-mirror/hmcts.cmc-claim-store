@@ -1,0 +1,49 @@
+{
+  "caseNumber": "000CM001",
+  "issueDate": "26-Apr-2018",
+  "courtFee": 40.00,
+  "amountWithInterest": 40.89,
+  "submitterEmail": "claimant@mail.com",
+  "claimants": [
+    {
+      "type": "SoleTrader",
+      "name": "John Rambo",
+      "businessName": "T/A AutoTraders",
+      "contactPerson": null,
+      "address": {
+        "line1": "52",
+        "line2": "Down Street",
+        "line3": "Salford",
+        "city": "Manchester",
+        "postcode": "DF1 3LJ"
+      },
+      "phoneNumber": "07873727165",
+      "dateOfBirth": null,
+      "correspondenceAddress": {
+        "line1": "52",
+        "line2": "Down Street",
+        "line3": "Salford",
+        "city": "Manchester",
+        "postcode": "DF1 3LJ"
+      }
+    }
+  ],
+  "defendants": [
+    {
+      "type": "SoleTrader",
+      "name": "John Smith",
+      "businessName": "T/A RoboticsTraders",
+      "contactPerson": null,
+      "address": {
+        "line1": "52",
+        "line2": "Down Street",
+        "line3": "Salford",
+        "city": "Manchester",
+        "postcode": "DF1 3LJ"
+      },
+      "emailAddress": "j.smith@example.com",
+      "correspondenceAddress": null
+    }
+  ],
+  "serviceDate": "01-May-2018"
+}

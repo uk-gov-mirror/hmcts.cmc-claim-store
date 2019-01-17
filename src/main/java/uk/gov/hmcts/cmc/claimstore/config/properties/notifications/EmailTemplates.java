@@ -1,5 +1,7 @@
 package uk.gov.hmcts.cmc.claimstore.config.properties.notifications;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
@@ -7,6 +9,8 @@ import javax.validation.constraints.NotEmpty;
 
 @Component
 @Validated
+@Getter
+@Setter
 public class EmailTemplates {
 
     @NotEmpty
@@ -19,10 +23,22 @@ public class EmailTemplates {
     private String defendantResponseIssuedToIndividual;
 
     @NotEmpty
+    private String defendantResponseNeeded;
+
+    @NotEmpty
     private String defendantResponseIssuedToCompany;
 
     @NotEmpty
     private String claimantResponseIssued;
+
+    @NotEmpty
+    private String claimantResponseWithMediationIssued;
+
+    @NotEmpty
+    private String claimantResponseWithNoMediationIssued;
+
+    @NotEmpty
+    private String defendantResponseWithNoMediationIssued;
 
     @NotEmpty
     private String staffMoreTimeRequested;
@@ -63,147 +79,36 @@ public class EmailTemplates {
     @NotEmpty
     private String offerCounterSignedEmailToOtherParty;
 
-    public String getClaimantMoreTimeRequested() {
-        return claimantMoreTimeRequested;
-    }
+    @NotEmpty
+    private String responseByClaimantEmailToDefendant;
 
-    public void setClaimantMoreTimeRequested(String claimantMoreTimeRequested) {
-        this.claimantMoreTimeRequested = claimantMoreTimeRequested;
-    }
+    @NotEmpty
+    private String claimantSaysDefendantHasPaidInFull;
 
-    public String getClaimantClaimIssued() {
-        return claimantClaimIssued;
-    }
+    @NotEmpty
+    private String claimantRequestedInterlocutoryJudgement;
 
-    public void setClaimantClaimIssued(String claimantClaimIssued) {
-        this.claimantClaimIssued = claimantClaimIssued;
-    }
+    @NotEmpty
+    private String redeterminationEmailToClaimant;
 
-    public String getDefendantClaimIssued() {
-        return defendantClaimIssued;
-    }
+    @NotEmpty
+    private String settlementRejectedEmailToClaimant;
 
-    public void setDefendantClaimIssued(String defendantClaimIssued) {
-        this.defendantClaimIssued = defendantClaimIssued;
-    }
+    @NotEmpty
+    private String settlementRejectedEmailToDefendant;
 
-    public String getDefendantResponseIssuedToIndividual() {
-        return defendantResponseIssuedToIndividual;
-    }
+    @NotEmpty
+    private String claimantSignedSettlementAgreementToDefendant;
 
-    public void setDefendantResponseIssuedToIndividual(String defendantResponseIssuedToIndividual) {
-        this.defendantResponseIssuedToIndividual = defendantResponseIssuedToIndividual;
-    }
+    @NotEmpty
+    private String claimantSignedSettlementAgreementToClaimant;
 
-    public String getDefendantResponseIssuedToCompany() {
-        return defendantResponseIssuedToCompany;
-    }
+    @NotEmpty
+    private String defendantSignedSettlementAgreementToDefendant;
 
-    public void setDefendantResponseIssuedToCompany(String defendantResponseIssuedToCompany) {
-        this.defendantResponseIssuedToCompany = defendantResponseIssuedToCompany;
-    }
+    @NotEmpty
+    private String defendantSignedSettlementAgreementToClaimant;
 
-    public String getClaimantResponseIssued() {
-        return claimantResponseIssued;
-    }
-
-    public void setClaimantResponseIssued(String claimantResponseIssued) {
-        this.claimantResponseIssued = claimantResponseIssued;
-    }
-
-    public String getStaffMoreTimeRequested() {
-        return staffMoreTimeRequested;
-    }
-
-    public void setStaffMoreTimeRequested(String staffMoreTimeRequested) {
-        this.staffMoreTimeRequested = staffMoreTimeRequested;
-    }
-
-    public String getDefendantMoreTimeRequested() {
-        return defendantMoreTimeRequested;
-    }
-
-    public void setDefendantMoreTimeRequested(String defendantMoreTimeRequested) {
-        this.defendantMoreTimeRequested = defendantMoreTimeRequested;
-    }
-
-    public String getRepresentativeClaimIssued() {
-        return representativeClaimIssued;
-    }
-
-    public void setRepresentativeClaimIssued(String representativeClaimIssued) {
-        this.representativeClaimIssued = representativeClaimIssued;
-    }
-
-    public String getClaimantCCJRequested() {
-        return claimantCCJRequested;
-    }
-
-    public void setClaimantCCJRequested(String claimantCCJRequested) {
-        this.claimantCCJRequested = claimantCCJRequested;
-    }
-
-    public String getDefendantOfferMade() {
-        return defendantOfferMade;
-    }
-
-    public void setDefendantOfferMade(String defendantOfferMade) {
-        this.defendantOfferMade = defendantOfferMade;
-    }
-
-    public String getClaimantOfferMade() {
-        return claimantOfferMade;
-    }
-
-    public void setClaimantOfferMade(String claimantOfferMade) {
-        this.claimantOfferMade = claimantOfferMade;
-    }
-
-    public String getOfferAcceptedByClaimantEmailToClaimant() {
-        return offerAcceptedByClaimantEmailToClaimant;
-    }
-
-    public void setOfferAcceptedByClaimantEmailToClaimant(String offerAcceptedByClaimantEmailToClaimant) {
-        this.offerAcceptedByClaimantEmailToClaimant = offerAcceptedByClaimantEmailToClaimant;
-    }
-
-    public String getOfferAcceptedByClaimantEmailToDefendant() {
-        return offerAcceptedByClaimantEmailToDefendant;
-    }
-
-    public void setOfferAcceptedByClaimantEmailToDefendant(String offerAcceptedByClaimantEmailToDefendant) {
-        this.offerAcceptedByClaimantEmailToDefendant = offerAcceptedByClaimantEmailToDefendant;
-    }
-
-    public String getOfferRejectedByClaimantEmailToClaimant() {
-        return offerRejectedByClaimantEmailToClaimant;
-    }
-
-    public void setOfferRejectedByClaimantEmailToClaimant(String offerRejectedByClaimantEmailToClaimant) {
-        this.offerRejectedByClaimantEmailToClaimant = offerRejectedByClaimantEmailToClaimant;
-    }
-
-    public String getOfferRejectedByClaimantEmailToDefendant() {
-        return offerRejectedByClaimantEmailToDefendant;
-    }
-
-    public void setOfferRejectedByClaimantEmailToDefendant(String offerRejectedByClaimantEmailToDefendant) {
-        this.offerRejectedByClaimantEmailToDefendant = offerRejectedByClaimantEmailToDefendant;
-    }
-
-    public String getOfferCounterSignedEmailToOriginator() {
-        return offerCounterSignedEmailToOriginator;
-    }
-
-    public void setOfferCounterSignedEmailToOriginator(String offerCounterSignedEmailToOriginator) {
-        this.offerCounterSignedEmailToOriginator = offerCounterSignedEmailToOriginator;
-    }
-
-    public String getOfferCounterSignedEmailToOtherParty() {
-        return offerCounterSignedEmailToOtherParty;
-    }
-
-    public void setOfferCounterSignedEmailToOtherParty(String offerCounterSignedEmailToOtherParty) {
-        this.offerCounterSignedEmailToOtherParty = offerCounterSignedEmailToOtherParty;
-    }
+    @NotEmpty
+    private String defendantAdmissionResponseToClaimant;
 }

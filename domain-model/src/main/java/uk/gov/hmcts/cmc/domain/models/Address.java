@@ -1,13 +1,16 @@
 package uk.gov.hmcts.cmc.domain.models;
 
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import org.hibernate.validator.constraints.NotBlank;
 import uk.gov.hmcts.ccd.definition.FieldLabel;
 import uk.gov.hmcts.cmc.domain.constraints.Postcode;
 
-import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+@Builder()
+@EqualsAndHashCode
 @FieldLabel("Address")
 public class Address {
 
@@ -64,27 +67,6 @@ public class Address {
 
     public String getPostcode() {
         return postcode;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (other == null || getClass() != other.getClass()) {
-            return false;
-        }
-        Address address = (Address) other;
-        return Objects.equals(line1, address.line1)
-            && Objects.equals(line2, address.line2)
-            && Objects.equals(line3, address.line3)
-            && Objects.equals(city, address.city)
-            && Objects.equals(postcode, address.postcode);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(line1, line2, line3, city, postcode);
     }
 
     @Override

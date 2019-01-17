@@ -2,75 +2,31 @@ package uk.gov.hmcts.cmc.ccd.mapper;
 
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.cmc.ccd.domain.CCDCase;
-import uk.gov.hmcts.cmc.ccd.mapper.ccj.CountyCourtJudgmentMapper;
-import uk.gov.hmcts.cmc.ccd.mapper.offers.SettlementMapper;
-import uk.gov.hmcts.cmc.ccd.mapper.response.ResponseMapper;
+import uk.gov.hmcts.cmc.ccd.domain.CCDDocument;
 import uk.gov.hmcts.cmc.domain.models.Claim;
-import uk.gov.hmcts.cmc.domain.models.CountyCourtJudgment;
-import uk.gov.hmcts.cmc.domain.models.offers.Settlement;
-import uk.gov.hmcts.cmc.domain.models.response.Response;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
-import static java.time.format.DateTimeFormatter.ISO_DATE;
-import static java.time.format.DateTimeFormatter.ISO_DATE_TIME;
-import static uk.gov.hmcts.cmc.ccd.domain.CCDYesNoOption.NO;
-import static uk.gov.hmcts.cmc.ccd.domain.CCDYesNoOption.YES;
-import static uk.gov.hmcts.cmc.domain.utils.LocalDateTimeFactory.fromNullableUTCtoLocalZone;
-import static uk.gov.hmcts.cmc.domain.utils.LocalDateTimeFactory.fromUTC;
+import java.net.URI;
+import java.util.Arrays;
 
 @Component
-public class CaseMapper implements Mapper<CCDCase, Claim> {
+public class CaseMapper {
 
     private final ClaimMapper claimMapper;
-    private final CountyCourtJudgmentMapper countyCourtJudgmentMapper;
-    private final ResponseMapper responseMapper;
-    private final SettlementMapper settlementMapper;
 
-    public CaseMapper(ClaimMapper claimMapper,
-                      CountyCourtJudgmentMapper countyCourtJudgmentMapper,
-                      ResponseMapper responseMapper,
-                      SettlementMapper settlementMapper) {
+    public CaseMapper(ClaimMapper claimMapper) {
         this.claimMapper = claimMapper;
-        this.countyCourtJudgmentMapper = countyCourtJudgmentMapper;
-        this.responseMapper = responseMapper;
-        this.settlementMapper = settlementMapper;
     }
 
-    @Override
     public CCDCase to(Claim claim) {
+        final CCDCase.CCDCaseBuilder builder = CCDCase.builder();
 
-        CCDCase.CCDCaseBuilder builder = CCDCase.builder();
+        claim.getSealedClaimDocument().ifPresent(document -> builder
+            .sealedClaimDocument(CCDDocument.builder()
+                .documentUrl(document.toString())
+                .build())
+        );
 
-        if (claim.getCountyCourtJudgment() != null) {
-            builder.countyCourtJudgment(countyCourtJudgmentMapper.to(claim.getCountyCourtJudgment()));
-        }
-
-        if (claim.getCountyCourtJudgmentRequestedAt() != null) {
-            builder.countyCourtJudgmentRequestedAt(claim.getCountyCourtJudgmentRequestedAt());
-        }
-
-        if (claim.getRespondedAt() != null) {
-            builder.respondedAt(claim.getRespondedAt());
-        }
-
-        claim.getResponse()
-            .ifPresent(response -> builder.response(responseMapper.to(response)));
-
-        claim.getSettlement().ifPresent(settlement -> builder.settlement(settlementMapper.to(settlement)));
-
-        if (claim.getSettlementReachedAt() != null) {
-            builder.settlementReachedAt(claim.getSettlementReachedAt());
-        }
-
-        if (claim.getLetterHolderId() != null) {
-            builder.letterHolderId(claim.getLetterHolderId());
-        }
-
-        if (claim.getDefendantId() != null) {
-            builder.defendantId(claim.getDefendantId());
-        }
+        claimMapper.to(claim, builder);
 
         return builder
             .id(claim.getId())
@@ -78,54 +34,33 @@ public class CaseMapper implements Mapper<CCDCase, Claim> {
             .referenceNumber(claim.getReferenceNumber())
             .submitterId(claim.getSubmitterId())
             .submitterEmail(claim.getSubmitterEmail())
-            .issuedOn(claim.getIssuedOn().format(ISO_DATE))
-            .submittedOn(claim.getCreatedAt().format(ISO_DATE_TIME))
-            .responseDeadline(claim.getResponseDeadline())
-            .moreTimeRequested(claim.isMoreTimeRequested() ? YES : NO)
-            .claimData(claimMapper.to(claim.getClaimData()))
-            .defendantEmail(claim.getDefendantEmail())
+            .issuedOn(claim.getIssuedOn())
+            .submittedOn(claim.getCreatedAt())
+            .features(claim.getFeatures() != null ? String.join(",", claim.getFeatures()) : null)
             .build();
     }
 
-    @Override
     public Claim from(CCDCase ccdCase) {
+        Claim.ClaimBuilder builder = Claim.builder();
 
-        CountyCourtJudgment countyCourtJudgment = null;
-        if (ccdCase.getCountyCourtJudgment() != null) {
-            countyCourtJudgment = countyCourtJudgmentMapper.from(ccdCase.getCountyCourtJudgment());
+        claimMapper.from(ccdCase, builder);
+
+        builder
+            .id(ccdCase.getId())
+            .submitterId(ccdCase.getSubmitterId())
+            .externalId(ccdCase.getExternalId())
+            .referenceNumber(ccdCase.getReferenceNumber())
+            .createdAt(ccdCase.getSubmittedOn())
+            .issuedOn(ccdCase.getIssuedOn())
+            .submitterEmail(ccdCase.getSubmitterEmail());
+
+        if (ccdCase.getFeatures() != null) {
+            builder.features(Arrays.asList(ccdCase.getFeatures().split(",")));
         }
 
-        Response response = null;
-        if (ccdCase.getResponse() != null) {
-            response = responseMapper.from(ccdCase.getResponse());
+        if (ccdCase.getSealedClaimDocument() != null) {
+            builder.sealedClaimDocument(URI.create(ccdCase.getSealedClaimDocument().getDocumentUrl()));
         }
-
-        Settlement settlement = null;
-        if (ccdCase.getSettlement() != null) {
-            settlement = settlementMapper.from(ccdCase.getSettlement());
-        }
-
-        return new Claim(
-            ccdCase.getId(),
-            ccdCase.getSubmitterId(),
-            ccdCase.getLetterHolderId(),
-            ccdCase.getDefendantId(),
-            ccdCase.getExternalId(),
-            ccdCase.getReferenceNumber(),
-            claimMapper.from(ccdCase.getClaimData()),
-            fromUTC(LocalDateTime.parse(ccdCase.getSubmittedOn(), ISO_DATE_TIME)),
-            LocalDate.parse(ccdCase.getIssuedOn(), ISO_DATE),
-            ccdCase.getResponseDeadline(),
-            ccdCase.getMoreTimeRequested() == YES,
-            ccdCase.getSubmitterEmail(),
-            fromNullableUTCtoLocalZone(ccdCase.getRespondedAt()),
-            response,
-            ccdCase.getDefendantEmail(),
-            countyCourtJudgment,
-            fromNullableUTCtoLocalZone(ccdCase.getCountyCourtJudgmentRequestedAt()),
-            settlement,
-            fromNullableUTCtoLocalZone(ccdCase.getSettlementReachedAt()),
-            null
-        );
+        return builder.build();
     }
 }

@@ -5,12 +5,14 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.context.ApplicationEventPublisher;
-import uk.gov.hmcts.cmc.claimstore.events.ccj.CountyCourtJudgmentRequestedEvent;
+import uk.gov.hmcts.cmc.claimstore.events.ccj.CountyCourtJudgmentEvent;
 import uk.gov.hmcts.cmc.claimstore.events.claim.ClaimIssuedEvent;
 import uk.gov.hmcts.cmc.claimstore.events.offer.OfferAcceptedEvent;
 import uk.gov.hmcts.cmc.claimstore.events.offer.OfferMadeEvent;
 import uk.gov.hmcts.cmc.claimstore.events.response.DefendantResponseEvent;
 import uk.gov.hmcts.cmc.claimstore.events.response.MoreTimeRequestedEvent;
+import uk.gov.hmcts.cmc.claimstore.events.settlement.RejectSettlementAgreementEvent;
+import uk.gov.hmcts.cmc.claimstore.events.settlement.SignSettlementAgreementEvent;
 import uk.gov.hmcts.cmc.claimstore.events.solicitor.RepresentedClaimIssuedEvent;
 import uk.gov.hmcts.cmc.claimstore.idam.models.UserDetails;
 import uk.gov.hmcts.cmc.claimstore.services.UserService;
@@ -106,13 +108,11 @@ public class EventProducerTest {
     }
 
     @Test
-    public void shouldCreateCountyCourtJudgmentSubmittedEvent() throws Exception {
-
-        // given
-        CountyCourtJudgmentRequestedEvent expectedEvent = new CountyCourtJudgmentRequestedEvent(CLAIM, AUTHORISATION);
-
+    public void shouldCreateDefaultCountyCourtJudgmentSubmittedEvent() throws Exception {
+        //given
+        CountyCourtJudgmentEvent expectedEvent = new CountyCourtJudgmentEvent(CLAIM, AUTHORISATION);
         // when
-        eventProducer.createCountyCourtJudgmentRequestedEvent(CLAIM, AUTHORISATION);
+        eventProducer.createCountyCourtJudgmentEvent(CLAIM, AUTHORISATION);
 
         //then
         verify(publisher).publishEvent(eq(expectedEvent));
@@ -142,5 +142,26 @@ public class EventProducerTest {
 
         //then
         verify(publisher).publishEvent(eq(expectedEvent));
+    }
+
+    @Test
+    public void shouldCreateSignSettlementAgreementEvent() throws Exception {
+        // given
+        SignSettlementAgreementEvent event = new SignSettlementAgreementEvent(CLAIM);
+
+        // when
+        eventProducer.createSignSettlementAgreementEvent(CLAIM);
+
+        //then
+        verify(publisher).publishEvent(eq(event));
+    }
+
+    @Test
+    public void shouldCreateRejectSettlementAgreementEvent() {
+        RejectSettlementAgreementEvent event = new RejectSettlementAgreementEvent(CLAIM);
+
+        eventProducer.createRejectSettlementAgreementEvent(CLAIM);
+
+        verify(publisher).publishEvent(eq(event));
     }
 }

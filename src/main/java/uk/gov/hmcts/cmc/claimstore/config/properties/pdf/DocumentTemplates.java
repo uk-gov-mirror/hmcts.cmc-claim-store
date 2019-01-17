@@ -11,6 +11,10 @@ public class DocumentTemplates {
         return readBytes("/citizen/templates/document/defendantResponseReceipt.html");
     }
 
+    public byte[] getClaimantResponseReceipt() {
+        return readBytes("/citizen/templates/document/claimantResponseReceipt.html");
+    }
+
     public byte[] getClaimIssueReceipt() {
         return readBytes("/citizen/templates/document/claimIssueReceipt.html");
     }
@@ -27,7 +31,7 @@ public class DocumentTemplates {
         return readBytes("/staff/templates/document/legalSealedClaim.html");
     }
 
-    public byte[] getCountyCourtJudgmentDetails() {
+    public byte[] getCountyCourtJudgmentByRequest() {
         return readBytes("/staff/templates/document/countyCourtJudgmentDetails.html");
     }
 

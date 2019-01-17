@@ -1,6 +1,12 @@
 package uk.gov.hmcts.cmc.domain.models.offers;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public enum MadeBy {
+    @JsonProperty("CLAIMANT")
     CLAIMANT,
-    DEFENDANT
+    @JsonProperty("DEFENDANT")
+    DEFENDANT,
+    @JsonProperty("COURT")
+    COURT
 }

@@ -28,7 +28,16 @@ public class DefendantResponseContentProviderTest {
                 new InterestCalculationService(Clock.systemDefaultZone())
             )
         ),
-        new NotificationsProperties()
+        new NotificationsProperties(),
+        new FullDefenceResponseContentProvider(),
+        new FullAdmissionResponseContentProvider(
+            new PaymentIntentionContentProvider(),
+            new StatementOfMeansContentProvider()
+        ),
+        new PartAdmissionResponseContentProvider(
+            new PaymentIntentionContentProvider(),
+            new StatementOfMeansContentProvider()
+        )
     );
 
     @Test(expected = NullPointerException.class)
@@ -78,6 +87,13 @@ public class DefendantResponseContentProviderTest {
                 ((FullDefenceResponse) claim.getResponse().orElseThrow(IllegalStateException::new))
                     .getDefence().orElse(null)
             );
+    }
+
+    @Test
+    public void shouldProvideCorrectFormNumber() {
+        Map<String, Object> content = provider.createContent(claim);
+        assertThat(content).containsKey("formNumber");
+        assertThat(content).containsValue("OCON9B");
     }
 
     @Test

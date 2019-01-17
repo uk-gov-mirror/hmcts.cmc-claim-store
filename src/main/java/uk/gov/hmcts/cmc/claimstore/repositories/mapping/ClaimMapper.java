@@ -1,18 +1,24 @@
 package uk.gov.hmcts.cmc.claimstore.repositories.mapping;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.tweak.ResultSetMapper;
 import uk.gov.hmcts.cmc.claimstore.processors.JsonMapper;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 import uk.gov.hmcts.cmc.domain.models.ClaimData;
 import uk.gov.hmcts.cmc.domain.models.CountyCourtJudgment;
+import uk.gov.hmcts.cmc.domain.models.ReDetermination;
+import uk.gov.hmcts.cmc.domain.models.claimantresponse.ClaimantResponse;
 import uk.gov.hmcts.cmc.domain.models.offers.Settlement;
 import uk.gov.hmcts.cmc.domain.models.response.Response;
 
+import java.net.URI;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 import static uk.gov.hmcts.cmc.claimstore.repositories.mapping.MappingUtils.toLocalDateTimeFromUTC;
+import static uk.gov.hmcts.cmc.claimstore.repositories.mapping.MappingUtils.toNullableLocalDateFromUTC;
 import static uk.gov.hmcts.cmc.claimstore.repositories.mapping.MappingUtils.toNullableLocalDateTimeFromUTC;
 
 public class ClaimMapper implements ResultSetMapper<Claim> {
@@ -41,8 +47,19 @@ public class ClaimMapper implements ResultSetMapper<Claim> {
             toNullableLocalDateTimeFromUTC(result.getTimestamp("county_court_judgment_requested_at")),
             toNullableSettlement(result.getString("settlement")),
             toNullableLocalDateTimeFromUTC(result.getTimestamp("settlement_reached_at")),
-            result.getString("sealed_claim_document_management_self_path")
+            mapNullableUri(result.getString("sealed_claim_document_management_self_path")),
+            toList(result.getString("features")),
+            toNullableLocalDateTimeFromUTC(result.getTimestamp("claimant_responded_at")),
+            toNullableEntity(result.getString("claimant_response"), ClaimantResponse.class),
+            toNullableLocalDateFromUTC(result.getTimestamp("directions_questionnaire_deadline")),
+            toNullableLocalDateFromUTC(result.getTimestamp("money_received_on")),
+            toNullableEntity(result.getString("re_determination"), ReDetermination.class),
+            toNullableLocalDateTimeFromUTC(result.getTimestamp("re_determination_requested_at"))
         );
+    }
+
+    private URI mapNullableUri(String uri) {
+        return uri != null ? URI.create(uri) : null;
     }
 
     private ClaimData toClaimData(String input) {
@@ -57,11 +74,24 @@ public class ClaimMapper implements ResultSetMapper<Claim> {
         return toNullableEntity(input, CountyCourtJudgment.class);
     }
 
+    private List<String> toList(String input) {
+        return toNullableEntity(input, new TypeReference<List<String>>() {
+        });
+    }
+
     private Settlement toNullableSettlement(String input) {
         return toNullableEntity(input, Settlement.class);
     }
 
     private <T> T toNullableEntity(String input, Class<T> entityClass) {
+        if (input == null) {
+            return null;
+        } else {
+            return jsonMapper.fromJson(input, entityClass);
+        }
+    }
+
+    private <T> T toNullableEntity(String input, TypeReference<T> entityClass) {
         if (input == null) {
             return null;
         } else {

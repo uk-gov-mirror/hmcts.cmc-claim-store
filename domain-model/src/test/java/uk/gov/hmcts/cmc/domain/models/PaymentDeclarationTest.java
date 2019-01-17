@@ -2,11 +2,11 @@ package uk.gov.hmcts.cmc.domain.models;
 
 import org.junit.Test;
 import uk.gov.hmcts.cmc.domain.models.sampledata.SamplePaymentDeclaration;
-import uk.gov.hmcts.cmc.domain.utils.ResourceReader;
 
 import java.time.LocalDate;
 import java.util.Set;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 import static uk.gov.hmcts.cmc.domain.BeanValidator.validate;
 
@@ -15,7 +15,7 @@ public class PaymentDeclarationTest {
     @Test
     public void shouldHaveNoValidationMessageWhenInstanceIsValid() {
         //given
-        PaymentDeclaration paymentDeclaration = SamplePaymentDeclaration.validDefaults();
+        PaymentDeclaration paymentDeclaration = SamplePaymentDeclaration.builder().build();
         //when
         Set<String> response = validate(paymentDeclaration);
         //then
@@ -26,8 +26,8 @@ public class PaymentDeclarationTest {
     public void shouldHaveValidationMessageWhenPaidDateIsNull() {
         //given
         PaymentDeclaration paymentDeclaration = SamplePaymentDeclaration.builder()
-            .withExplanation("defence")
-            .withPaidDate(null)
+            .explanation("defence")
+            .paidDate(null)
             .build();
         //when
         Set<String> errors = validate(paymentDeclaration);
@@ -41,8 +41,8 @@ public class PaymentDeclarationTest {
     public void shouldHaveValidationMessageWhenPaidDateIsInTheFuture() {
         //given
         PaymentDeclaration paymentDeclaration = SamplePaymentDeclaration.builder()
-            .withExplanation("defence")
-            .withPaidDate(LocalDate.now().plusYears(1))
+            .explanation("defence")
+            .paidDate(LocalDate.now().plusYears(1))
             .build();
         //when
         Set<String> errors = validate(paymentDeclaration);
@@ -56,7 +56,7 @@ public class PaymentDeclarationTest {
     public void shouldHaveValidationMessageWhenExplanationIsNull() {
         //given
         PaymentDeclaration paymentDeclaration = SamplePaymentDeclaration.builder()
-            .withExplanation(null)
+            .explanation(null)
             .build();
         //when
         Set<String> errors = validate(paymentDeclaration);
@@ -70,7 +70,7 @@ public class PaymentDeclarationTest {
     public void shouldHaveValidationMessageWhenExplanationIsEmpty() {
         //given
         PaymentDeclaration paymentDeclaration = SamplePaymentDeclaration.builder()
-            .withExplanation("")
+            .explanation("")
             .build();
         //when
         Set<String> errors = validate(paymentDeclaration);
@@ -83,10 +83,8 @@ public class PaymentDeclarationTest {
     @Test
     public void shouldHaveValidationMessageWhenExplanationExceedsSizeLimit() {
         //given
-        String explanation = new ResourceReader().read("/defence_exceeding_size_limit.text");
-
         PaymentDeclaration paymentDeclaration = SamplePaymentDeclaration.builder()
-            .withExplanation(explanation)
+            .explanation(randomAlphanumeric(99001))
             .build();
         //when
         Set<String> errors = validate(paymentDeclaration);

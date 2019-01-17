@@ -1,0 +1,181 @@
+{
+  "id": 1516189555935242,
+  "jurisdiction": "CMC",
+  "state": "claimIssued",
+  "case_type_id": "MoneyClaimCase",
+  "created_date": "2018-01-17T11:45:55.944",
+  "last_modified": "2018-01-17T11:45:55.989",
+  "security_classification": "PUBLIC",
+  "case_data": {
+    "id": 1546507244305457,
+    "reason": "A strong sense of entitlement that would explain my reasons of the claim, that the Roof work and leaks that followed were done below standards set by the council inspector",
+    "features": "admissions",
+    "issuedOn": "2019-01-03",
+    "timeline": [
+      {
+        "id": "0bfaad91-d41a-43b9-bd0f-5397f1a7a654",
+        "value": {
+          "date": "01 October 2017",
+          "description": "The day the first bill was issued"
+        }
+      },
+      {
+        "id": "c1bd2d8c-a953-454f-bea3-cdd1e06bd5b9",
+        "value": {
+          "date": "26 March 2018",
+          "description": "A historic day with enormous importance"
+        }
+      },
+      {
+        "id": "17aa68ca-e845-44d0-b705-edf6828ee71a",
+        "value": {
+          "date": "14 June 2018",
+          "description": "line to explain what happened and when"
+        }
+      }
+    ],
+    "claimants": [
+      {
+        "id": "db10f60f-30b7-43a4-bfd4-25fd157e7bc9",
+        "value": {
+          "partyName": "Jan Clark",
+          "partyType": "INDIVIDUAL",
+          "partyPhone": "07873727165",
+          "partyAddress": {
+            "PostCode": "SW1A 9AA",
+            "PostTown": "London",
+            "AddressLine1": "Street 1",
+            "AddressLine2": "Street 2",
+            "AddressLine3": "Street 3"
+          },
+          "partyDateOfBirth": "2000-01-01"
+        }
+      }
+    ],
+    "amountType": "BREAK_DOWN",
+    "defendants": [
+      {
+        "id": "cef4f044-e2fc-4cec-8d76-64f1dd381e01",
+        "value": {
+          "partyName": "Mary Richards",
+          "partyType": "INDIVIDUAL",
+          "partyEmail": "j.smith@example.com",
+          "partyPhone": "07873727165",
+          "defendantId": "62",
+          "partyAddress": {
+            "PostCode": "SW1A 9AA",
+            "PostTown": "London",
+            "AddressLine1": "Flat 3A",
+            "AddressLine2": "Street 1",
+            "AddressLine3": "Middle Road"
+          },
+          "responseType": "FULL_ADMISSION",
+          "letterHolderId": "83",
+          "partyDateOfBirth": "1970-01-01",
+          "responseDeadline": "2019-02-05",
+          "statementOfMeans": {
+            "carer": "NO",
+            "reason": "sdsf asfawdfasd",
+            "incomes": [
+              {
+                "id": "3e60bd93-0258-4ad2-bbc9-f15b2a1c4e24",
+                "value": {
+                  "type": "JOB",
+                  "frequency": "MONTH",
+                  "amountReceived": 600
+                }
+              }
+            ],
+            "expenses": [
+              {
+                "id": "20eb8bce-851f-448f-8db6-0ecdabf0ad67",
+                "value": {
+                  "type": "MORTGAGE",
+                  "frequency": "MONTH",
+                  "amountPaid": 400
+                }
+              }
+            ],
+            "employers": [
+              {
+                "id": "71f7f6b0-4c4a-46f7-b763-b3b99a82ea31",
+                "value": {
+                  "jobTitle": "sdfdsfdsf",
+                  "employerName": "dssfsdfdsf"
+                }
+              }
+            ],
+            "bankAccounts": [
+              {
+                "id": "1692e24d-d4da-44a1-b36e-94e579776b74",
+                "value": {
+                  "type": "CURRENT_ACCOUNT",
+                  "joint": "YES",
+                  "balance": 300
+                }
+              }
+            ],
+            "livingPartner": {
+              "over18": "YES",
+              "pensioner": "YES",
+              "disability": "NO"
+            },
+            "residenceType": "OWN_HOME",
+            "disabilityStatus": "SEVERE",
+            "dependantChildren": [
+              {
+                "id": "26451c04-6a59-462c-aae0-ed07784eb13e",
+                "value": {
+                  "ageGroupType": "UNDER_11",
+                  "numberOfChildren": 1
+                }
+              }
+            ],
+            "anyDisabledChildren": "NO",
+            "noOfMaintainedChildren": 0
+          },
+          "responseSubmittedOn": "2019-01-03T10:07:07.888",
+          "claimantProvidedName": "Mary Richards",
+          "claimantProvidedType": "INDIVIDUAL",
+          "claimantProvidedEmail": "j.smith@example.com",
+          "claimantProvidedAddress": {
+            "PostCode": "SW1A 9AA",
+            "PostTown": "London",
+            "AddressLine1": "Flat 3A",
+            "AddressLine2": "Street 1",
+            "AddressLine3": "Middle Road"
+          },
+          "defendantPaymentIntention": {
+            "paymentLength": "3 months",
+            "paymentOption": "INSTALMENTS",
+            "completionDate": "2019-04-12",
+            "paymentSchedule": "EVERY_MONTH",
+            "firstPaymentDate": "2019-02-12",
+            "instalmentAmount": 45
+          },
+          "responseFreeMediationOption": "NO",
+          "responseMoreTimeNeededOption": "YES"
+        }
+      }
+    ],
+    "externalId": "d9d9578e-7255-4a61-a682-026bb5fb97cd",
+    "submittedOn": "2019-01-03T09:21:10.961446",
+    "submitterId": "62",
+    "interestType": "NO_INTEREST",
+    "paymentAmount": 25,
+    "paymentStatus": "Success",
+    "submitterEmail": "j.smith@example.com",
+    "amountBreakDown": [
+      {
+        "id": "5a44b87f-32d8-4b32-9d11-06fe0623c040",
+        "value": {
+          "amount": 75,
+          "reason": "Roof Fix & repairs to leak"
+        }
+      }
+    ],
+    "referenceNumber": "000MC023",
+    "paymentReference": "RC-1546-5072-4323-8255",
+    "feeAmountInPennies": 2500
+  }
+}
