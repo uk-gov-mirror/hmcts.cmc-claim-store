@@ -7,8 +7,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import uk.gov.hmcts.cmc.ccd.domain.CaseEvent;
 import uk.gov.hmcts.cmc.claimstore.documents.output.PDF;
 import uk.gov.hmcts.cmc.claimstore.events.operations.BulkPrintOperationService;
+import uk.gov.hmcts.cmc.claimstore.events.operations.ClaimCreationEventsStatusService;
 import uk.gov.hmcts.cmc.claimstore.events.operations.ClaimantOperationService;
 import uk.gov.hmcts.cmc.claimstore.events.operations.DefendantOperationService;
 import uk.gov.hmcts.cmc.claimstore.events.operations.NotifyStaffOperationService;
@@ -17,6 +19,17 @@ import uk.gov.hmcts.cmc.claimstore.events.operations.RpaOperationService;
 import uk.gov.hmcts.cmc.claimstore.events.operations.UploadOperationService;
 import uk.gov.hmcts.cmc.claimstore.events.solicitor.RepresentedClaimCreatedEvent;
 import uk.gov.hmcts.cmc.domain.models.Claim;
+import uk.gov.hmcts.cmc.domain.models.ClaimSubmissionOperationIndicators;
+import uk.gov.hmcts.cmc.domain.models.response.YesNoOption;
+
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 @Async("threadPoolTaskExecutor")
 @Service
@@ -32,6 +45,16 @@ public class ClaimCreatedOperationHandler {
     private final NotifyStaffOperationService notifyStaffOperationService;
     private final UploadOperationService uploadOperationService;
     private final DocumentGenerationService documentGenerationService;
+    private final ClaimCreationEventsStatusService eventsStatusService;
+
+    private final ClaimCreationOperation<Claim, String, GeneratedDocuments, Claim> uploadDefendantLetter;
+    private final ClaimCreationOperation<Claim, String, GeneratedDocuments, Claim> bulkPrint;
+    private final ClaimCreationOperation<Claim, String, GeneratedDocuments, Claim> notifyStaff;
+
+    private final Predicate<ClaimSubmissionOperationIndicators> isPinOperationSuccess = indicators ->
+        Stream.of(indicators.getDefendantNotification(), indicators.getRPA(),
+            indicators.getBulkPrint(), indicators.getStaffNotification())
+            .anyMatch(ind -> ind.equals(YesNoOption.NO));
 
     @Autowired
     @SuppressWarnings("squid:S00107")
@@ -43,7 +66,8 @@ public class ClaimCreatedOperationHandler {
         RpaOperationService rpaOperationService,
         NotifyStaffOperationService notifyStaffOperationService,
         UploadOperationService uploadOperationService,
-        DocumentGenerationService documentGenerationService
+        DocumentGenerationService documentGenerationService,
+        ClaimCreationEventsStatusService eventsStatusService
     ) {
         this.representativeOperationService = representativeOperationService;
         this.bulkPrintOperationService = bulkPrintOperationService;
@@ -53,6 +77,17 @@ public class ClaimCreatedOperationHandler {
         this.notifyStaffOperationService = notifyStaffOperationService;
         this.uploadOperationService = uploadOperationService;
         this.documentGenerationService = documentGenerationService;
+        this.eventsStatusService = eventsStatusService;
+
+        uploadDefendantLetter = (claim, auth, docs) -> uploadOperationService.uploadDocument(claim, auth,
+            docs.getDefendantLetter());
+
+        bulkPrint = (claim, auth, docs) -> bulkPrintOperationService.print(claim, docs.getDefendantLetterDoc(),
+            docs.getSealedClaimDoc(), auth);
+
+        notifyStaff = (claim, auth, docs) -> notifyStaffOperationService.notify(claim, auth, docs.getSealedClaim(),
+            docs.getDefendantLetter());
+
     }
 
     @EventListener
@@ -62,33 +97,24 @@ public class ClaimCreatedOperationHandler {
             String authorisation = event.getAuthorisation();
             String submitterName = event.getSubmitterName();
             GeneratedDocuments generatedDocuments = documentGenerationService.generateForCitizen(claim, authorisation);
+            ClaimSubmissionOperationIndicators indicator = claim.getClaimSubmissionOperationIndicators();
+            Claim updatedClaim = claim;
 
-            Claim updatedClaim = uploadOperationService.uploadDocument(
-                claim,
-                authorisation,
-                generatedDocuments.getDefendantLetter()
-            );
+            if (isPinOperationSuccess.test(indicator)) {
+                updatedClaim = CompletableFuture.supplyAsync(() ->
+                    uploadDefendantLetter.perform(claim, authorisation, generatedDocuments)
+                ).thenApplyAsync(claimAfterDefendantLetterSuccess ->
+                    bulkPrint.perform(claimAfterDefendantLetterSuccess, authorisation, generatedDocuments)
+                ).thenApplyAsync(claimAfterBulkPrintSuccess ->
+                    notifyStaff.perform(claimAfterBulkPrintSuccess, authorisation, generatedDocuments)
+                ).thenApplyAsync(updClaim ->
+                    defendantOperationService.notify(updClaim, generatedDocuments.getPin(), submitterName,
+                        authorisation)
+                ).get();
+            }
 
-            updatedClaim = bulkPrintOperationService.print(
-                updatedClaim,
-                generatedDocuments.getDefendantLetterDoc(),
-                generatedDocuments.getSealedClaimDoc(),
-                authorisation
-            );
-
-            updatedClaim = notifyStaffOperationService.notify(
-                updatedClaim,
-                authorisation,
-                generatedDocuments.getSealedClaim(),
-                generatedDocuments.getDefendantLetter()
-            );
-
-            updatedClaim = defendantOperationService.notify(
-                updatedClaim,
-                generatedDocuments.getPin(),
-                submitterName,
-                authorisation
-            );
+            updatedClaim = eventsStatusService.updateClaimOperationCompletion(authorisation, updatedClaim.getId(),
+                indicator, CaseEvent.PIN_GENERATION_OPERATIONS);
 
             //TODO Check if above operation indicators are successful, if no return else  continue
 
@@ -98,17 +124,26 @@ public class ClaimCreatedOperationHandler {
                 generatedDocuments.getSealedClaim()
             );
 
+            updatedClaim = eventsStatusService.updateClaimOperationCompletion(authorisation, updatedClaim.getId(),
+                indicator, CaseEvent.PIN_GENERATION_OPERATIONS);
+
             updatedClaim = uploadOperationService.uploadDocument(
                 updatedClaim,
                 authorisation,
                 generatedDocuments.getClaimIssueReceipt()
             );
 
-            updatedClaim = rpaOperationService.notify(updatedClaim, authorisation, generatedDocuments.getSealedClaim());
-            updatedClaim = claimantOperationService.notifyCitizen(updatedClaim, submitterName, authorisation);
+            updatedClaim = eventsStatusService.updateClaimOperationCompletion(authorisation, updatedClaim.getId(),
+                indicator, CaseEvent.PIN_GENERATION_OPERATIONS);
 
-            //TODO update claim state
-            //claimService.updateState
+            updatedClaim = rpaOperationService.notify(updatedClaim, authorisation, generatedDocuments.getSealedClaim());
+            updatedClaim = eventsStatusService.updateClaimOperationCompletion(authorisation, updatedClaim.getId(),
+                indicator, CaseEvent.PIN_GENERATION_OPERATIONS);
+
+            updatedClaim = claimantOperationService.notifyCitizen(updatedClaim, submitterName, authorisation);
+            updatedClaim = eventsStatusService.updateClaimOperationCompletion(authorisation, updatedClaim.getId(),
+                indicator, CaseEvent.PIN_GENERATION_OPERATIONS);
+
 
         } catch (Exception e) {
             logger.error("failed operation processing for event ()", event, e);
@@ -141,4 +176,11 @@ public class ClaimCreatedOperationHandler {
             logger.error("failed operation processing for event ()", event, e);
         }
     }
+
+    @FunctionalInterface
+    interface ClaimCreationOperation<C, A, G, U> {
+        U perform(C claim, A authorisation, G generateddocs);
+    }
 }
+
+

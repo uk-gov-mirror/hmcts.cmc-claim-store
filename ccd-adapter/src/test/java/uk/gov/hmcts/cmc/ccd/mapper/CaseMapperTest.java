@@ -22,7 +22,6 @@ import static uk.gov.hmcts.cmc.ccd.util.SampleCCDClaimSubmissionOperationIndicat
 import static uk.gov.hmcts.cmc.ccd.util.SampleCCDClaimSubmissionOperationIndicators.getNullCCDClaimSubmissionOperationIndicators;
 import static uk.gov.hmcts.cmc.ccd.util.SampleData.getAmountBreakDown;
 
-
 @SpringBootTest
 @ContextConfiguration(classes = CCDAdapterConfig.class)
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -121,7 +120,8 @@ public class CaseMapperTest {
     @Test
     public void shouldMapSubmissionIndicatorsFromCCDCaseWithDefaultIndicators() {
         //given
-        CCDCase ccdCase = SampleData.getCCDCitizenCaseWithOperationIndicators(getDefaultCCDClaimSubmissionOperationIndicators);
+        CCDCase ccdCase = SampleData
+            .getCCDCitizenCaseWithOperationIndicators(getDefaultCCDClaimSubmissionOperationIndicators);
 
         //when
         Claim claim = ccdCaseMapper.from(ccdCase);
@@ -140,7 +140,8 @@ public class CaseMapperTest {
     @Test
     public void shouldMapSubmissionIndicatorsFromCCDCaseWithNullIndicators() {
         //given
-        CCDCase ccdCase = SampleData.getCCDCitizenCaseWithOperationIndicators(getNullCCDClaimSubmissionOperationIndicators);
+        CCDCase ccdCase = SampleData
+            .getCCDCitizenCaseWithOperationIndicators(getNullCCDClaimSubmissionOperationIndicators);
 
         //when
         Claim claim = ccdCaseMapper.from(ccdCase);
@@ -159,7 +160,8 @@ public class CaseMapperTest {
     @Test
     public void shouldMapSubmissionIndicatorsFromCCDCaseWithPinSuccessIndicators() {
         //given
-        CCDCase ccdCase = SampleData.getCCDCitizenCaseWithOperationIndicators(getCCDClaimSubmissionOperationIndicatorsWithPinSuccess);
+        CCDCase ccdCase = SampleData
+            .getCCDCitizenCaseWithOperationIndicators(getCCDClaimSubmissionOperationIndicatorsWithPinSuccess);
 
         //when
         Claim claim = ccdCaseMapper.from(ccdCase);

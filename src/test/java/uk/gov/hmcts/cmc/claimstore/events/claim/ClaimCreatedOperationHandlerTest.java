@@ -9,6 +9,7 @@ import uk.gov.hmcts.cmc.claimstore.documents.CitizenServiceDocumentsService;
 import uk.gov.hmcts.cmc.claimstore.documents.ClaimIssueReceiptService;
 import uk.gov.hmcts.cmc.claimstore.documents.SealedClaimPdfService;
 import uk.gov.hmcts.cmc.claimstore.events.operations.BulkPrintOperationService;
+import uk.gov.hmcts.cmc.claimstore.events.operations.ClaimCreationEventsStatusService;
 import uk.gov.hmcts.cmc.claimstore.events.operations.ClaimantOperationService;
 import uk.gov.hmcts.cmc.claimstore.events.operations.DefendantOperationService;
 import uk.gov.hmcts.cmc.claimstore.events.operations.NotifyStaffOperationService;
@@ -41,7 +42,7 @@ public class ClaimCreatedOperationHandlerTest {
     public static final String PIN = "PIN";
     public static final String SUBMITTER_NAME = "submitter-name";
     public static final String AUTHORISATION = "AUTHORISATION";
-    private static final byte[] PDF_BYTES = new byte[] {1, 2, 3, 4};
+    private static final byte[] PDF_BYTES = new byte[]{1, 2, 3, 4};
     public static final String LETTER_HOLDER_ID = "LetterHolderId";
 
     private Map<String, Object> pinContents = new HashMap<>();
@@ -77,6 +78,8 @@ public class ClaimCreatedOperationHandlerTest {
     private UploadOperationService uploadOperationService;
     @Mock
     private ClaimService claimService;
+    @Mock
+    private ClaimCreationEventsStatusService statusService;
 
     @Before
     public void before() {
@@ -95,8 +98,8 @@ public class ClaimCreatedOperationHandlerTest {
             rpaOperationService,
             notifyStaffOperationService,
             uploadOperationService,
-            documentGenerationService
-
+            documentGenerationService,
+            statusService
         );
 
         given(claimService.getPinResponse(eq(CLAIM.getClaimData()), eq(AUTHORISATION)))
@@ -121,6 +124,8 @@ public class ClaimCreatedOperationHandlerTest {
         given(rpaOperationService.notify(eq(CLAIM), eq(AUTHORISATION), any())).willReturn(CLAIM);
         given(notifyStaffOperationService.notify(eq(CLAIM), eq(AUTHORISATION), any())).willReturn(CLAIM);
         given(uploadOperationService.uploadDocument(eq(CLAIM), eq(AUTHORISATION), any())).willReturn(CLAIM);
+        given(statusService.updateClaimOperationCompletion(eq(AUTHORISATION), eq(CLAIM.getId()), any(),
+            any())).willReturn(CLAIM);
 
     }
 

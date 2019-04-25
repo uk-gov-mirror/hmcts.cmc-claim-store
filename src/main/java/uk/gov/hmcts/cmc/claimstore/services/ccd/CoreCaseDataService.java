@@ -856,13 +856,14 @@ public class CoreCaseDataService {
         }
     }
 
-    public void saveClaimSubmissionOperationIndicators(Long caseId,
+    public Claim saveClaimSubmissionOperationIndicators(Long caseId,
                                                   ClaimSubmissionOperationIndicators indicators,
-                                                  String authorisation) {
+                                                  String authorisation,
+                                                       CaseEvent caseEvent) {
         try {
             UserDetails userDetails = userService.getUserDetails(authorisation);
 
-            EventRequestData eventRequestData = eventRequest(SETTLED_PRE_JUDGMENT, userDetails.getId());
+            EventRequestData eventRequestData = eventRequest(caseEvent, userDetails.getId());
 
             StartEventResponse startEventResponse = startUpdate(
                 authorisation,
@@ -872,17 +873,19 @@ public class CoreCaseDataService {
             );
 
             Claim updatedClaim = toClaimBuilder(startEventResponse)
-                .moneyReceivedOn(paidInFull.getMoneyReceivedOn())
-                .build();
+                                .claimSubmissionOperationIndicators(indicators)
+                                .build();
 
             CaseDataContent caseDataContent = caseDataContent(startEventResponse, updatedClaim);
 
-            submitUpdate(authorisation,
+            CaseDetails caseDetails = submitUpdate(authorisation,
                 eventRequestData,
                 caseDataContent,
                 caseId,
                 userDetails.isSolicitor() || userDetails.isCaseworker()
             );
+
+            return extractClaim(caseDetails);
         } catch (Exception exception) {
             throw new CoreCaseDataStoreException(
                 String.format(

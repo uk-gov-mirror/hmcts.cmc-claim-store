@@ -69,7 +69,7 @@ public interface CaseRepository {
     Claim updateClaimSubmissionOperationStatus(
         String authorisation,
         Long claimId,
-        ClaimSubmissionOperationIndicators indicators);
+        ClaimSubmissionOperationIndicators indicators, CaseEvent caseEvent);
 
     Claim linkLetterHolder(Long claimId, String letterHolderId);
 }

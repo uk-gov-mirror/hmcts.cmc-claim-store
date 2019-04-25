@@ -252,7 +252,8 @@ public class DBCaseRepository implements CaseRepository {
     public Claim updateClaimSubmissionOperationStatus(
         String authorisation,
         Long claimId,
-        ClaimSubmissionOperationIndicators indicators) {
+        ClaimSubmissionOperationIndicators indicators,
+        CaseEvent caseEvent) {
         claimRepository.updateClaimSubmissionOperationStatus(claimId, jsonMapper.toJson(indicators));
         return claimRepository.getById(claimId).orElseThrow(() ->
             new NotFoundException(
