@@ -43,20 +43,17 @@ public class DocumentUploadHandler {
 
     private final DocumentsService documentService;
     private final DefendantResponseReceiptService defendantResponseReceiptService;
-    private final CountyCourtJudgmentPdfService countyCourtJudgmentPdfService;
     private final SettlementAgreementCopyService settlementAgreementCopyService;
     private final ClaimIssueReceiptService claimIssueReceiptService;
 
     @Autowired
     public DocumentUploadHandler(
         DefendantResponseReceiptService defendantResponseReceiptService,
-        CountyCourtJudgmentPdfService countyCourtJudgmentPdfService,
         SettlementAgreementCopyService settlementAgreementCopyService,
         ClaimIssueReceiptService claimIssueReceiptService,
         DocumentsService documentService
     ) {
         this.defendantResponseReceiptService = defendantResponseReceiptService;
-        this.countyCourtJudgmentPdfService = countyCourtJudgmentPdfService;
         this.settlementAgreementCopyService = settlementAgreementCopyService;
         this.claimIssueReceiptService = claimIssueReceiptService;
         this.documentService = documentService;
@@ -94,22 +91,6 @@ public class DocumentUploadHandler {
             defendantResponseReceiptService.createPdf(claim),
             DEFENDANT_RESPONSE_RECEIPT);
         uploadToDocumentManagement(claim, event.getAuthorization(), singletonList(defendantResponseDocument));
-    }
-
-    @EventListener
-    @LogExecutionTime
-    public void uploadCountyCourtJudgmentDocument(CountyCourtJudgmentEvent event) {
-        Claim claim = event.getClaim();
-        requireNonNull(claim, CLAIM_MUST_NOT_BE_NULL);
-        if (null == claim.getCountyCourtJudgment() && null == claim.getCountyCourtJudgmentRequestedAt()) {
-            throw new NotFoundException("County Court Judgment does not exist for this claim");
-        }
-        PDF document = new PDF(buildRequestForJudgementFileBaseName(claim.getReferenceNumber(),
-            claim.getClaimData().getDefendant().getName()),
-            countyCourtJudgmentPdfService.createPdf(claim),
-            CCJ_REQUEST);
-
-        uploadToDocumentManagement(claim, event.getAuthorisation(), singletonList(document));
     }
 
     @EventListener
