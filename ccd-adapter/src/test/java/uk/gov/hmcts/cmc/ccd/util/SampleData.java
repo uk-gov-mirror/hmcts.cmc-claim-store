@@ -512,7 +512,6 @@ public class SampleData {
 
     public static CCDOrderGenerationData getCCDOrderGenerationData() {
         return CCDOrderGenerationData.builder()
-            .otherDirectionHeader(UPLOAD)
             .directionList(ImmutableList.of(
                 DOCUMENTS, EYEWITNESS))
             .otherDirections(ImmutableList.of(

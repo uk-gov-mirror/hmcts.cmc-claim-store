@@ -49,6 +49,4 @@ public class CCDOrderGenerationData {
     private CCDHearingDurationType estimatedHearingDuration;
 
     private CCDDocument draftOrderDoc;
-
-    private CCDOtherDirectionHeaderType otherDirectionHeader;
 }
