@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 public class StateFlowContext {
-    protected static String EXTENDED_STATE_VARIABLE_KEY = "claim";
+    protected static String EXTENDED_STATE_CLAIM_KEY = "claim";
+    protected static String EXTENDED_STATE_HISTORY_KEY = "history";
 
     private final List<String> states = new ArrayList<>();
 

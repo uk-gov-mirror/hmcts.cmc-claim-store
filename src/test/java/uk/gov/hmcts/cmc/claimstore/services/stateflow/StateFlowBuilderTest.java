@@ -272,7 +272,7 @@ public class StateFlowBuilderTest {
     }
 
     @Test
-    public void shouldEvaluateTheClaimState() {
+    public void shouldEvaluateStateAndGetStateHistory() {
         Claim claim = Claim.builder().build();
 
         Predicate<Claim> firstPredicate = c -> {
@@ -287,15 +287,45 @@ public class StateFlowBuilderTest {
 
         StateFlow stateFlow = StateFlowBuilder.<FlowState>flow("FLOW")
             .initial(FlowState.STATE_1)
-            .transitionTo(FlowState.STATE_2).onlyIf(firstPredicate)
+                .transitionTo(FlowState.STATE_2).onlyIf(firstPredicate)
             .state(FlowState.STATE_2)
-            .transitionTo(FlowState.STATE_3).onlyIf(secondPredicate)
+                .transitionTo(FlowState.STATE_3).onlyIf(secondPredicate)
             .state(FlowState.STATE_3)
             .build();
 
         stateFlow.evaluate(claim);
 
-        String stateId = stateFlow.asStateMachine().getState().getId();
-        assertThat(stateId).isEqualTo("FLOW.STATE_2");
+        assertThat(stateFlow.getState())
+            .extracting("name")
+            .containsExactly("FLOW.STATE_2");
+
+        assertThat(stateFlow.getStateHistory())
+            .hasSize(2)
+            .extracting("name")
+            .containsExactly("FLOW.STATE_1", "FLOW.STATE_2");
+    }
+
+    @Test
+    public void shouldEvaluateStateAndGetStateHistoryWhenAmbiguousTransitions() {
+        Claim claim = Claim.builder().build();
+
+        StateFlow stateFlow = StateFlowBuilder.<FlowState>flow("FLOW")
+            .initial(FlowState.STATE_1)
+                .transitionTo(FlowState.STATE_2)
+                .transitionTo(FlowState.STATE_3)
+            .state(FlowState.STATE_2)
+            .state(FlowState.STATE_3)
+            .build();
+
+        stateFlow.evaluate(claim);
+
+        assertThat(stateFlow.getState())
+            .extracting("name")
+            .containsExactly("ERROR");
+
+        assertThat(stateFlow.getStateHistory())
+            .hasSize(2)
+            .extracting("name")
+            .containsExactly("FLOW.STATE_1", "FLOW.STATE_3");
     }
 }

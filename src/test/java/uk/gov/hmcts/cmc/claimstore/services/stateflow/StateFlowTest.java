@@ -10,11 +10,14 @@ import org.springframework.statemachine.state.State;
 import reactor.core.publisher.Mono;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
-import static uk.gov.hmcts.cmc.claimstore.services.stateflow.StateFlowContext.EXTENDED_STATE_VARIABLE_KEY;
+import static uk.gov.hmcts.cmc.claimstore.services.stateflow.StateFlowContext.EXTENDED_STATE_CLAIM_KEY;
+import static uk.gov.hmcts.cmc.claimstore.services.stateflow.StateFlowContext.EXTENDED_STATE_HISTORY_KEY;
 import static uk.gov.hmcts.cmc.claimstore.services.stateflow.model.State.ERROR;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -30,8 +33,12 @@ public class StateFlowTest {
         return mock(Map.class);
     }
 
+    private ExtendedState createMockedExtendedState() {
+        return mock(ExtendedState.class);
+    }
+
     private ExtendedState createMockedExtendedState(Map<Object, Object> mockedVariables) {
-        ExtendedState mockedExtendedState = mock(ExtendedState.class);
+        ExtendedState mockedExtendedState = createMockedExtendedState();
         when(mockedExtendedState.getVariables()).thenReturn(mockedVariables);
         return mockedExtendedState;
     }
@@ -69,7 +76,7 @@ public class StateFlowTest {
         StateFlow stateFlow = new StateFlow(mockedStateMachine);
 
         assertThat(stateFlow.evaluate(claim)).isSameAs(stateFlow);
-        verify(mockedVariables).put(eq(EXTENDED_STATE_VARIABLE_KEY), eq(claim));
+        verify(mockedVariables).put(eq(EXTENDED_STATE_CLAIM_KEY), eq(claim));
         verify(mockedMono).block();
     }
 
@@ -96,6 +103,22 @@ public class StateFlowTest {
             .extracting("name")
             .doesNotContainNull()
             .containsExactly(ERROR);
+    }
+
+    @Test
+    public void shouldGetStateHistory() {
+        ArrayList<String> stateHistory = new ArrayList<>(Arrays.asList("FLOW.STATE_1", "FLOW.STATE_2"));
+
+        ExtendedState mockedExtendedState = createMockedExtendedState();
+        when(mockedStateMachine.getExtendedState()).thenReturn(mockedExtendedState);
+        when(mockedExtendedState.get(EXTENDED_STATE_HISTORY_KEY, ArrayList.class)).thenReturn(stateHistory);
+
+        StateFlow stateFlow = new StateFlow(mockedStateMachine);
+
+        assertThat(stateFlow.getStateHistory())
+            .hasSize(2)
+            .extracting("name")
+            .containsExactly("FLOW.STATE_1", "FLOW.STATE_2");
     }
 
 }

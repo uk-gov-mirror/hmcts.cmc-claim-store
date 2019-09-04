@@ -2,15 +2,17 @@ package uk.gov.hmcts.cmc.claimstore.services.stateflow;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.statemachine.ExtendedState;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.listener.StateMachineListenerAdapter;
 import org.springframework.statemachine.state.State;
 import org.springframework.statemachine.transition.Transition;
 import uk.gov.hmcts.cmc.claimstore.services.stateflow.utils.StateMachineUtils;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static uk.gov.hmcts.cmc.claimstore.services.stateflow.StateFlowContext.EXTENDED_STATE_HISTORY_KEY;
 
 public class StateFlowListener extends StateMachineListenerAdapter<String, String> {
 
@@ -35,6 +37,18 @@ public class StateFlowListener extends StateMachineListenerAdapter<String, Strin
                 sourceState, permittedStates);
             logger.error(message);
             stateContext.getStateMachine().setStateMachineError(new IllegalStateException(message));
+        }
+    }
+
+    @Override
+    public void stateChanged(State<String, String> from, State<String, String> to) {
+        ExtendedState extendedState = stateContext.getStateMachine().getExtendedState();
+        List<String> historyList = extendedState.get(EXTENDED_STATE_HISTORY_KEY, ArrayList.class);
+        if (historyList == null) {
+            Map<Object, Object> variables = extendedState.getVariables();
+            variables.put(EXTENDED_STATE_HISTORY_KEY, new ArrayList<>(Arrays.asList(to.getId())));
+        } else {
+            historyList.add(0, to.getId());
         }
     }
 

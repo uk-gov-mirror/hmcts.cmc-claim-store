@@ -59,8 +59,9 @@ public class StateFlowContextTest {
         StateFlowContext stateFlowContext = new StateFlowContext();
         stateFlowContext.addState("state-1");
         stateFlowContext.addState("state-2");
-        assertThat(stateFlowContext.getStates()).isNotEmpty().hasSize(2);
-        assertThat(stateFlowContext.getStates()).contains("state-1", "state-2");
+        assertThat(stateFlowContext.getStates())
+            .hasSize(2)
+            .contains("state-1", "state-2");
     }
 
     @Test
@@ -71,7 +72,8 @@ public class StateFlowContextTest {
         stateFlowContext.addTransition(transition1);
         stateFlowContext.addTransition(transition2);
 
-        assertThat(stateFlowContext.getTransitions()).isNotEmpty().hasSize(2);
-        assertThat(stateFlowContext.getTransitions()).contains(transition1, transition2);
+        assertThat(stateFlowContext.getTransitions())
+            .hasSize(2)
+            .contains(transition1, transition2);
     }
 }

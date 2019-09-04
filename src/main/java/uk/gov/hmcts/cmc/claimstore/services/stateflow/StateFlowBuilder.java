@@ -11,7 +11,7 @@ import uk.gov.hmcts.cmc.domain.models.Claim;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import static uk.gov.hmcts.cmc.claimstore.services.stateflow.StateFlowContext.EXTENDED_STATE_VARIABLE_KEY;
+import static uk.gov.hmcts.cmc.claimstore.services.stateflow.StateFlowContext.EXTENDED_STATE_CLAIM_KEY;
 
 /**
  * DSL for creating a StateFlow which wraps a state engine backed by Spring State Machine.
@@ -179,7 +179,7 @@ public class StateFlowBuilder<S> {
                     if (transition.getCondition() != null) {
                         transitionConfigurer.guard(
                             context -> transition.getCondition().test(
-                                context.getExtendedState().get(EXTENDED_STATE_VARIABLE_KEY, Claim.class)
+                                context.getExtendedState().get(EXTENDED_STATE_CLAIM_KEY, Claim.class)
                             )
                         );
                     }
