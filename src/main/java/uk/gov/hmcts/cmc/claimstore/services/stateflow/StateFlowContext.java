@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class StateFlowContext {
+    protected static String EXTENDED_STATE_VARIABLE_KEY = "claim";
 
     private final List<String> states = new ArrayList<>();
 
@@ -32,5 +33,13 @@ public class StateFlowContext {
     public List<Transition> addTransition(Transition transition) {
         this.transitions.add(transition);
         return this.transitions;
+    }
+
+    public List<String> getStates() {
+        return states;
+    }
+
+    public List<Transition> getTransitions() {
+        return transitions;
     }
 }
