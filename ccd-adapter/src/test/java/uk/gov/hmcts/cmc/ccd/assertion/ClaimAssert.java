@@ -259,6 +259,21 @@ public class ClaimAssert extends AbstractAssert<ClaimAssert, Claim> {
         assertThat(claimData.getClaimants().size()).isEqualTo(ccdCase.getApplicants().size());
         assertThat(claimData.getDefendants().size()).isEqualTo(ccdCase.getRespondents().size());
 
+        actual.getReviewOrder()
+            .ifPresent(reviewOrder -> assertThat(reviewOrder).isEqualTo(ccdCase.getReviewOrder()));
+
+        if (ccdCase.getChannelType() != null && !actual.getChannelType().isPresent()) {
+            failWithMessage("Expected CCDCase.channelType to be not present but was <%s>",
+                actual.getChannelType());
+        }
+        actual.getChannelType()
+            .ifPresent(channelType -> {
+                if (!Objects.equals(channelType.name(), ccdCase.getChannelType().name())) {
+                    failWithMessage("Expected CCDCase.channelType to be <%s> but was <%s>",
+                        ccdCase.getChannelType(), channelType);
+                }
+            });
+
         return this;
     }
 

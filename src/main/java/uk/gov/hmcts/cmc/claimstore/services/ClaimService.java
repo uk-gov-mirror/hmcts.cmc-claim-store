@@ -19,7 +19,9 @@ import uk.gov.hmcts.cmc.claimstore.repositories.ClaimRepository;
 import uk.gov.hmcts.cmc.claimstore.rules.ClaimAuthorisationRule;
 import uk.gov.hmcts.cmc.claimstore.rules.MoreTimeRequestRule;
 import uk.gov.hmcts.cmc.claimstore.rules.PaidInFullRule;
+import uk.gov.hmcts.cmc.claimstore.rules.ReviewOrderRule;
 import uk.gov.hmcts.cmc.claimstore.stereotypes.LogExecutionTime;
+import uk.gov.hmcts.cmc.claimstore.utils.DirectionsQuestionnaireUtils;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 import uk.gov.hmcts.cmc.domain.models.ClaimData;
 import uk.gov.hmcts.cmc.domain.models.ClaimDocumentCollection;
@@ -29,6 +31,9 @@ import uk.gov.hmcts.cmc.domain.models.ClaimSubmissionOperationIndicators;
 import uk.gov.hmcts.cmc.domain.models.CountyCourtJudgment;
 import uk.gov.hmcts.cmc.domain.models.PaidInFull;
 import uk.gov.hmcts.cmc.domain.models.ReDetermination;
+import uk.gov.hmcts.cmc.domain.models.ReviewOrder;
+import uk.gov.hmcts.cmc.domain.models.ioc.InitiatePaymentRequest;
+import uk.gov.hmcts.cmc.domain.models.ioc.InitiatePaymentResponse;
 import uk.gov.hmcts.cmc.domain.models.response.Response;
 import uk.gov.hmcts.cmc.domain.models.response.ResponseType;
 
@@ -60,6 +65,7 @@ public class ClaimService {
     private final AppInsights appInsights;
     private final PaidInFullRule paidInFullRule;
     private final ClaimAuthorisationRule claimAuthorisationRule;
+    private final ReviewOrderRule reviewOrderRule;
     private final boolean asyncEventOperationEnabled;
     private CCDEventProducer ccdEventProducer;
 
@@ -78,6 +84,7 @@ public class ClaimService {
         PaidInFullRule paidInFullRule,
         CCDEventProducer ccdEventProducer,
         ClaimAuthorisationRule claimAuthorisationRule,
+        ReviewOrderRule reviewOrderRule,
         @Value("${feature_toggles.async_event_operations_enabled:false}") boolean asyncEventOperationEnabled
     ) {
         this.claimRepository = claimRepository;
@@ -92,6 +99,7 @@ public class ClaimService {
         this.paidInFullRule = paidInFullRule;
         this.ccdEventProducer = ccdEventProducer;
         this.claimAuthorisationRule = claimAuthorisationRule;
+        this.reviewOrderRule = reviewOrderRule;
         this.asyncEventOperationEnabled = asyncEventOperationEnabled;
     }
 
@@ -177,6 +185,14 @@ public class ClaimService {
 
     public List<Claim> getClaimsByState(ClaimState claimState, User user) {
         return caseRepository.getClaimsByState(claimState, user);
+    }
+
+    public InitiatePaymentResponse initiatePayment(
+        String authorisation,
+        String submitterId,
+        InitiatePaymentRequest request) {
+        User user = userService.getUser(authorisation);
+        return caseRepository.initiatePayment(user, submitterId, request);
     }
 
     @LogExecutionTime
@@ -322,7 +338,7 @@ public class ClaimService {
         LocalDate claimantResponseDeadline =
             responseDeadlineCalculator.calculateClaimantResponseDeadline(LocalDate.now());
         caseRepository.saveDefendantResponse(claim, defendantEmail, response, claimantResponseDeadline, authorization);
-        if (isFullDefenceWithNoMediation(response)) {
+        if (isFullDefenceWithNoMediation(response) && !DirectionsQuestionnaireUtils.isOnlineDQ(claim)) {
             LocalDate deadline = directionsQuestionnaireDeadlineCalculator
                 .calculateDirectionsQuestionnaireDeadlineCalculator(LocalDateTime.now());
             caseRepository.updateDirectionsQuestionnaireDeadline(claim, deadline, authorization);
@@ -359,5 +375,14 @@ public class ClaimService {
 
     public void updateClaimState(String authorisation, Claim claim, ClaimState state) {
         caseRepository.updateClaimState(authorisation, claim.getId(), state);
+    }
+
+    public Claim saveReviewOrder(String externalId, ReviewOrder reviewOrder, String authorisation) {
+        Claim claim = getClaimByExternalId(externalId, authorisation);
+        claimAuthorisationRule.assertClaimCanBeAccessed(claim, authorisation);
+        reviewOrderRule.assertReviewOrder(claim);
+        Claim updatedClaim = caseRepository.saveReviewOrder(claim.getId(), reviewOrder, authorisation);
+        eventProducer.createReviewOrderEvent(authorisation, updatedClaim);
+        return updatedClaim;
     }
 }

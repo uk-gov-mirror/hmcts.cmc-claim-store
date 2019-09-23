@@ -146,9 +146,16 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-           no fix available, not affected anyway
-           ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson-databind@.*$</packageUrl>
-        <cve>CVE-2019-12814</cve>
+			Doesn't look exploitable, will wait for new jackson databind library
+			]]></notes>
+        <gav regex="true">.*</gav>
+        <cve>CVE-2019-14540</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+			Doesn't look exploitable, will wait for new jackson databind library
+			]]></notes>
+        <gav regex="true">.*</gav>
+        <cve>CVE-2019-16335</cve>
     </suppress>
 </suppressions>
