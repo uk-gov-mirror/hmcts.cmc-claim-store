@@ -95,5 +95,7 @@ public interface CaseRepository {
 
     Claim saveReviewOrder(Long caseId, ReviewOrder reviewOrder, String authorisation);
 
+    Claim saveJudgment(Long caseId, String judgmentProcessId);
+
 }
 

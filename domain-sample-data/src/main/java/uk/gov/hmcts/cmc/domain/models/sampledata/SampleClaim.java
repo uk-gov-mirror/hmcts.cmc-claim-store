@@ -494,7 +494,8 @@ public final class SampleClaim {
             ccdCaseId,
             reviewOrder,
             directionOrder,
-            channel
+            channel,
+            null
         );
     }
 

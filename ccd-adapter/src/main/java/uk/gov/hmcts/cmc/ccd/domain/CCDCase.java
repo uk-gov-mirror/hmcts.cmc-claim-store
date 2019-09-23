@@ -74,4 +74,6 @@ public class CCDCase {
     private CCDDirectionOrder directionOrder;
     private CCDReviewOrder reviewOrder;
     private CCDChannelType channelType;
+
+    private String judgmentProcessId;
 }

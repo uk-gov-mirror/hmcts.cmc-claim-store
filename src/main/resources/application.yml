@@ -68,6 +68,9 @@ courtfinder:
   api:
     url: "https://courttribunalfinder.service.gov.uk"
 
+camunda:
+  api:
+    url: "http://localhost:9000/"
 
 pdf-service:
   url: "${PDF_SERVICE_URL:}"

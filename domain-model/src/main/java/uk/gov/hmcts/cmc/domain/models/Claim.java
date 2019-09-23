@@ -70,7 +70,7 @@ public class Claim {
     private final ReviewOrder reviewOrder;
     private final DirectionOrder directionOrder;
     private final ChannelType channelType;
-
+    private final String judgmentProcessId;
     @SuppressWarnings("squid:S00107") // Not sure there's a lot fo be done about removing parameters here
     @Builder(toBuilder = true)
     public Claim(
@@ -108,7 +108,8 @@ public class Claim {
         Long ccdCaseId,
         ReviewOrder reviewOrder,
         DirectionOrder directionOrder,
-        ChannelType channelType
+        ChannelType channelType,
+        String judgmentProcessId
     ) {
         this.id = id;
         this.submitterId = submitterId;
@@ -145,6 +146,7 @@ public class Claim {
         this.reviewOrder = reviewOrder;
         this.directionOrder = directionOrder;
         this.channelType = channelType;
+        this.judgmentProcessId = judgmentProcessId;
     }
 
     public Optional<Response> getResponse() {

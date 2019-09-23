@@ -42,6 +42,7 @@ import uk.gov.hmcts.cmc.claimstore.services.document.DocumentsService;
 import uk.gov.hmcts.cmc.domain.exceptions.BadRequestException;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 import uk.gov.hmcts.cmc.domain.models.ClaimDocumentType;
+import uk.gov.hmcts.cmc.domain.models.JudgmentRequest;
 import uk.gov.hmcts.cmc.domain.models.MediationRequest;
 import uk.gov.hmcts.cmc.domain.models.claimantresponse.ClaimantResponse;
 import uk.gov.hmcts.cmc.domain.models.claimantresponse.FormaliseOption;
@@ -210,6 +211,16 @@ public class SupportController {
     ) {
         mediationReportService
             .sendMediationReport(authorisation, mediationRequest.getReportDate());
+
+    }
+
+    @PostMapping(value = "/updateJudgment", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation("Update judgment status")
+    public void updateJudgment(
+        @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorisation,
+        @RequestBody JudgmentRequest judgmentRequest
+    ) {
+        claimService.saveJudgment(judgmentRequest.getCaseId(), judgmentRequest.getJusgmentProcessId());
 
     }
 

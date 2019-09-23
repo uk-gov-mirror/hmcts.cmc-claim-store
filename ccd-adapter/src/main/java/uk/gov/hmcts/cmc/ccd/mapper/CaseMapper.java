@@ -75,6 +75,7 @@ public class CaseMapper {
             .caseName(toCaseName.apply(claim))
             .claimSubmissionOperationIndicators(
                 mapClaimSubmissionOperationIndicatorsToCCD.apply(claim.getClaimSubmissionOperationIndicators()))
+            .judgmentProcessId(claim.getJudgmentProcessId())
             .build();
     }
 
@@ -97,7 +98,8 @@ public class CaseMapper {
             .claimSubmissionOperationIndicators(
                 mapFromCCDClaimSubmissionOperationIndicators.apply(ccdCase.getClaimSubmissionOperationIndicators()))
             .directionOrder(directionOrderMapper.from(ccdCase.getDirectionOrder(), ccdCase.getDirectionOrderData()))
-            .reviewOrder(reviewOrderMapper.from(ccdCase.getReviewOrder()));
+            .reviewOrder(reviewOrderMapper.from(ccdCase.getReviewOrder()))
+            .judgmentProcessId(ccdCase.getJudgmentProcessId());
 
         if (ccdCase.getFeatures() != null) {
             builder.features(Arrays.asList(ccdCase.getFeatures().split(",")));

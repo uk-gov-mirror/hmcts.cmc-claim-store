@@ -198,6 +198,12 @@ public class CCDCaseRepository implements CaseRepository {
     }
 
     @Override
+    public Claim saveJudgment(Long caseId, String judgmentProcessId) {
+        User user = userService.authenticateAnonymousCaseWorker();
+        return coreCaseDataService.saveJudgment(user.getAuthorisation(), caseId, judgmentProcessId);
+    }
+
+    @Override
     public Claim updateClaimSubmissionOperationStatus(String authorisation, Long claimId,
                                                       ClaimSubmissionOperationIndicators indicators,
                                                       CaseEvent caseEvent) {

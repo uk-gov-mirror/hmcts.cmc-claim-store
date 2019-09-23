@@ -373,4 +373,8 @@ public class ClaimService {
         eventProducer.createReviewOrderEvent(authorisation, updatedClaim);
         return updatedClaim;
     }
+
+    public Claim saveJudgment(Long caseId, String judgmentProcessId){
+        return caseRepository.saveJudgment(caseId, judgmentProcessId);
+    }
 }

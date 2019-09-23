@@ -278,6 +278,11 @@ public class DBCaseRepository implements CaseRepository {
         throw new NotImplementedException("Save review order is not implemented for claim store database");
     }
 
+    @Override
+    public Claim saveJudgment(Long caseId, String judgmentProcessId) {
+        throw new NotImplementedException("");
+    }
+
     private Claim getClaimById(Long claimId) {
         return claimRepository.getById(claimId).orElseThrow(() ->
             new NotFoundException(String.format("Claim not found by primary key %s.", claimId)));
