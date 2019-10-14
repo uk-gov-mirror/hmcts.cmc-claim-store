@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
 import org.springframework.transaction.PlatformTransactionManager;
-import uk.gov.hmcts.cmc.ccd.migration.repositories.ClaimRepository;
 
 import javax.sql.DataSource;
 
@@ -45,10 +44,5 @@ public class EtlDbConfiguration {
         dbi.registerContainerFactory(new OptionalContainerFactory());
 
         return dbi;
-    }
-
-    @Bean
-    public ClaimRepository claimRepository(DBI dbi) {
-        return dbi.onDemand(ClaimRepository.class);
     }
 }
