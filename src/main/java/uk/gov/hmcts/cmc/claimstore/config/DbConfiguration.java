@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
@@ -16,6 +17,7 @@ import uk.gov.hmcts.cmc.claimstore.repositories.TestingSupportRepository;
 
 import javax.sql.DataSource;
 
+@Lazy
 @Configuration
 public class DbConfiguration {
     @Bean
