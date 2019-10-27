@@ -24,6 +24,8 @@ spring:
   mail:
     default-encoding: UTF-8
     test-connection: true
+    host: ${SPRING_MAIL_HOST:}
+    port: ${SPRING_MAIL_PORT:}
   servlet:
     multipart:
       enabled: true
@@ -31,6 +33,8 @@ spring:
       max-request-size: 4000000KB
   jackson:
     default-property-inclusion: non_null
+  flyway:
+    enabled: false
   datasource:
     claimstore:
       driverClassName: org.postgresql.Driver
@@ -172,8 +176,17 @@ notifications:
       claimantIntentionToProceedForOnlineDq: "200830e5-3bbf-4a43-864a-58ff4c2e1ff2"
 
 staff-notifications:
-  sender:
-  recipient:
+  sender: "${STAFF_NOTIFICATIONS_SENDER:}"
+  recipient: "${STAFF_NOTIFICATIONS_RECIPIENT:}"
+
+rpa:
+  notifications:
+    sealedClaimRecipient: "${RPA_NOTIFICATIONS_SEALEDCLAIMRECIPIENT:}"
+    sender: "${RPA_NOTIFICATIONS_SENDER:}"
+    moreTimeRequestedRecipient: "${RPA_NOTIFICATIONS_MORETIMEREQUESTEDRECIPIENT:}"
+    paidInFullRecipient: "${RPA_NOTIFICATIONS_PAIDINFULLRECIPIENT:}"
+    responseRecipient: "${RPA_NOTIFICATIONS_RESPONSERECIPIENT:}"
+    countyCourtJudgementRecipient: "${RPA_NOTIFICATIONS_COUNTYCOURTJUDGEMENTRECIPIENT:}"
 
 feature_toggles:
   watermark_pdf: false
@@ -193,6 +206,7 @@ claim-store:
 oauth2:
  client:
   id: 'cmc_citizen'
+  secret: "${OAUTH2_CLIENT_SECRET}"
 ---
 spring:
   profiles: 'aat'
