@@ -254,12 +254,12 @@ dependencies {
 task apiTest(type: Test) {
   group = 'verification'
   description = 'Runs the api tests'
-  setTestClassesDirs(sourceSets.integrationTest.output.classesDirs)
+  // disable for IoC perfTest 
+/*  setTestClassesDirs(sourceSets.integrationTest.output.classesDirs)
   setClasspath(sourceSets.integrationTest.runtimeClasspath)
   doFirst{
     systemProperty('spring.profiles.active', 'integration-tests')
-    
-  }
+  }*/
 }
 
 task migrateClaims() {
@@ -280,21 +280,23 @@ task migrateClaims() {
 task functional(type: Test) {
   group = 'Delivery pipeline'
   description = 'Executes functional tests against an AAT Claim Store instance'
-  setTestClassesDirs(sourceSets.aat.output.classesDirs)
+  // disable for IoC perfTest 
+/*  setTestClassesDirs(sourceSets.aat.output.classesDirs)
   setClasspath(sourceSets.aat.runtimeClasspath)
   include "uk/gov/hmcts/cmc/claimstore/tests/functional/**"
 
-  environment("APPINSIGHTS_INSTRUMENTATIONKEY", "test-key")
+  environment("APPINSIGHTS_INSTRUMENTATIONKEY", "test-key")*/
 }
 
 task smoke(type: Test) {
   group = 'Delivery pipeline'
   description = 'Executes non-destructive smoke tests against a running Claim Store instance'
-  setTestClassesDirs(sourceSets.aat.output.classesDirs)
+  // disable for IoC perfTest 
+/*  setTestClassesDirs(sourceSets.aat.output.classesDirs)
   setClasspath(sourceSets.aat.runtimeClasspath)
   include "uk/gov/hmcts/cmc/claimstore/tests/smoke/**"
 
-  environment("APPINSIGHTS_INSTRUMENTATIONKEY", "test-key")
+  environment("APPINSIGHTS_INSTRUMENTATIONKEY", "test-key")*/
 }
 
 compileIntegrationTestJava {
