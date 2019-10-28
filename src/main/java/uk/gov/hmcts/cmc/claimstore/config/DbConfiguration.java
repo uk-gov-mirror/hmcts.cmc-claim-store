@@ -1,11 +1,13 @@
 package uk.gov.hmcts.cmc.claimstore.config;
 
+import org.flywaydb.core.Flyway;
 import org.skife.jdbi.v2.DBI;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -16,6 +18,7 @@ import uk.gov.hmcts.cmc.claimstore.repositories.TestingSupportRepository;
 
 import javax.sql.DataSource;
 
+@Profile("integration-tests")
 @Configuration
 public class DbConfiguration {
     @Bean
@@ -34,7 +37,10 @@ public class DbConfiguration {
 
     @Bean
     public TransactionAwareDataSourceProxy transactionAwareDataSourceProxy(DataSource claimStoreDataSource) {
-        return new TransactionAwareDataSourceProxy(claimStoreDataSource);
+        TransactionAwareDataSourceProxy dataSourceProxy = new TransactionAwareDataSourceProxy(claimStoreDataSource);
+
+        migrateFlyway(dataSourceProxy);
+        return dataSourceProxy;
     }
 
     @Bean
@@ -65,5 +71,13 @@ public class DbConfiguration {
     @Bean
     public OffersRepository offersRepository(DBI dbi) {
         return dbi.onDemand(OffersRepository.class);
+    }
+
+    private void migrateFlyway(DataSource dataSource) {
+        Flyway.configure()
+            .dataSource(dataSource)
+            .locations("db/migration/claimstore")
+            .load()
+            .migrate();
     }
 }
