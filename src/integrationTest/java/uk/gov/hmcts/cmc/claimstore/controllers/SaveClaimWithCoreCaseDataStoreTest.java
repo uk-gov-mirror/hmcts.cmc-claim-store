@@ -1,10 +1,10 @@
-package uk.gov.hmcts.cmc.claimstore.deprecated.controllers;
+package uk.gov.hmcts.cmc.claimstore.controllers;
 
 import feign.FeignException;
 import org.junit.Test;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
-import uk.gov.hmcts.cmc.claimstore.deprecated.BaseSaveTest;
+import uk.gov.hmcts.cmc.claimstore.BaseSaveTest;
 import uk.gov.hmcts.cmc.domain.models.ClaimData;
 import uk.gov.hmcts.cmc.domain.models.sampledata.SampleClaimData;
 

@@ -1,6 +1,7 @@
-package uk.gov.hmcts.cmc.claimstore.deprecated.controllers;
+package uk.gov.hmcts.cmc.claimstore.controllers;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -11,10 +12,15 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
-import uk.gov.hmcts.cmc.claimstore.deprecated.BaseSaveTest;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import uk.gov.hmcts.cmc.claimstore.BaseMockSpringTest;
+import uk.gov.hmcts.cmc.claimstore.deprecated.PostClaimOperation;
 import uk.gov.hmcts.cmc.claimstore.services.staff.BulkPrintStaffNotificationService;
 import uk.gov.hmcts.cmc.domain.models.Claim;
+import uk.gov.hmcts.cmc.domain.models.ClaimData;
 import uk.gov.hmcts.cmc.domain.models.sampledata.SampleClaimData;
+import uk.gov.hmcts.cmc.email.EmailService;
 
 import java.util.UUID;
 
@@ -37,13 +43,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 )
 @AutoConfigureWireMock(port = 0)
 @ActiveProfiles("test")
-public class BulkPrintRequestTest extends BaseSaveTest {
+public class BulkPrintRequestTest extends BaseMockSpringTest {
 
     @Autowired
     private WireMockServer wireMockServer;
+    @Autowired
+    protected PostClaimOperation postClaimOperation;
 
     @MockBean
     private BulkPrintStaffNotificationService bulkPrintNotificationService;
+    @MockBean
+    protected EmailService emailService;
 
     @Test
     public void shouldNotSendNotificationWhenEverythingIsOk() throws Exception {
@@ -61,14 +71,14 @@ public class BulkPrintRequestTest extends BaseSaveTest {
             .andExpect(status().isOk())
             .andReturn();
 
-        Claim savedClaim = deserializeObjectFrom(result, Claim.class);
+        Claim savedClaim = jsonMappingHelper.deserializeObjectFrom(result, Claim.class);
 
         postClaimOperation.getClaim(savedClaim.getExternalId(), AUTHORISATION_TOKEN);
 
         verify(bulkPrintNotificationService, never())
             .notifyFailedBulkPrint(
                 anyList(),
-                eq(deserializeObjectFrom(result, Claim.class)));
+                eq(jsonMappingHelper.deserializeObjectFrom(result, Claim.class)));
     }
 
     @Test
@@ -112,4 +122,15 @@ public class BulkPrintRequestTest extends BaseSaveTest {
                 anyList(),
                 any(Claim.class));
     }
+
+    private ResultActions makeIssueClaimRequest(ClaimData claimData, String authorization) throws Exception {
+        return webClient
+            .perform(MockMvcRequestBuilders.post("/claims/" + USER_ID)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .header(HttpHeaders.AUTHORIZATION, authorization)
+                .header("Features", ImmutableList.of("admissions"))
+                .content(jsonMappingHelper.toJson(claimData))
+            );
+    }
+
 }
