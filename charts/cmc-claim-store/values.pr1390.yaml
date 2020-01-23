@@ -1,0 +1,53 @@
+tags:
+  cmc-claim-store-postgresql-pod: true
+  cmc-citizen-frontend-pod: true
+  ccd-idam-pr: true
+
+postgresql:
+  image:
+    tag: '11.3.0'
+  resources:
+    requests:
+      cpu: 25m
+  initdbScripts:
+    init.sql: |-
+      CREATE DATABASE claimstore WITH OWNER = hmcts ENCODING = 'UTF-8' CONNECTION LIMIT = -1;
+      CREATE DATABASE cmc WITH OWNER = hmcts ENCODING = 'UTF-8' CONNECTION LIMIT = -1;
+      CREATE DATABASE features WITH OWNER = hmcts ENCODING = 'UTF-8' CONNECTION LIMIT = -1;
+      CREATE DATABASE "data-store" WITH OWNER = hmcts ENCODING = 'UTF-8' CONNECTION LIMIT = -1;
+      CREATE DATABASE "definition-store" WITH OWNER = hmcts ENCODING = 'UTF-8' CONNECTION LIMIT = -1;
+  postgresqlUsername: hmcts
+  postgresqlPassword: hmcts
+  postgresqlDatabase: user-profile
+  nameOverride: postgres
+  persistence:
+    enabled: false
+
+java:
+  ingressHost: cmc-claim-store-pr-1390.service.core-compute-preview.internal
+  environment:
+    LOG_LEVEL: DEBUG
+    IDAM_S2S_AUTH_URL: http://rpe-service-auth-provider-aat.service.core-compute-aat.internal
+    SEND_LETTER_URL: http://rpe-send-letter-service-aat.service.core-compute-aat.internal
+    IDAM_API_URL: https://idam-api.aat.platform.hmcts.net
+    PDF_SERVICE_URL: http://cmc-pdf-service-aat.service.core-compute-aat.internal
+    DOCUMENT_MANAGEMENT_URL: http://dm-store-aat.service.core-compute-aat.internal
+    PAY_URL: http://payment-api-aat.service.core-compute-aat.internal
+    FEES_URL: http://fees-register-api-aat.service.core-compute-aat.internal
+    DOC_ASSEMBLY_URL: false
+    FRONTEND_BASE_URL: https://cmc-citizen-frontend-aat.service.core-compute-aat.internal
+    RESPOND_TO_CLAIM_URL: https://cmc-citizen-frontend-aat.service.core-compute-aat.internal/first-contact/start
+    CLAIM_STORE_DB_HOST: cmc-claim-store-pr-1390-postgres
+    CLAIM_STORE_DB_USERNAME: hmcts
+    CLAIM_STORE_DB_PASSWORD: hmcts
+    CMC_DB_HOST: cmc-claim-store-pr-1390-postgres
+    CMC_DB_USERNAME: hmcts
+    CMC_DB_PASSWORD: hmcts
+    CORE_CASE_DATA_API_URL: http://cmc-claim-store-pr-1390-ccd-data-store-api
+
+claimStoreCCD:
+  enabled: true
+  ccd:
+    postgresql:
+      disabled: true
+
