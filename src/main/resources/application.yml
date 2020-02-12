@@ -207,6 +207,8 @@ oauth2:
 ---
 spring:
   profiles: 'aat'
+flyway:
+    baseline: "${FLY_WAY_BASELINE_VERSION:0}"
 
 test-instance-uri: "${TEST_URL:}"
 smoke-test-citizen:
