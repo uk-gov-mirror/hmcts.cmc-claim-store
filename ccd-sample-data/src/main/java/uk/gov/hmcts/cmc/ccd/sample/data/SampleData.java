@@ -789,4 +789,27 @@ public class SampleData {
             .state(OPEN.getValue())
             .build();
     }
+
+    public static CCDCase getCCDCitizenCaseWithDefault() {
+
+        return ccdBuilderWithDefault()
+            .amountType(RANGE)
+            .amountLowerValue("5000")
+            .amountHigherValue("50000")
+            .applicants(getApplicants())
+            .respondents(getRespondents())
+            .build();
+    }
+
+    public static List<CCDCollectionElement<CCDApplicant>> getApplicants() {
+        return singletonList(CCDCollectionElement.<CCDApplicant>builder()
+            .id(UUID.randomUUID().toString())
+            .value(getCCDApplicantIndividual()).build());
+    }
+
+    public static List<CCDCollectionElement<CCDRespondent>> getRespondents() {
+        return singletonList(CCDCollectionElement.<CCDRespondent>builder()
+            .id(UUID.randomUUID().toString())
+            .value(getCCDRespondentIndividual()).build());
+    }
 }
