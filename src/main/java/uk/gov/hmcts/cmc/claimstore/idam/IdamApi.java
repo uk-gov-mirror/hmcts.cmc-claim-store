@@ -25,7 +25,7 @@ public interface IdamApi {
 
     @RequestMapping(
         method = RequestMethod.POST,
-        value = "/oauth2/authorize",
+        value = "/o/authorize",
         consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE
     )
     AuthenticateUserResponse authenticateUser(
@@ -35,7 +35,7 @@ public interface IdamApi {
         @RequestParam("redirect_uri") final String redirectUri
     );
 
-    @RequestMapping(method = RequestMethod.POST, value = "/oauth2/authorize")
+    @RequestMapping(method = RequestMethod.POST, value = "/o/authorize")
     AuthenticateUserResponse upliftUser(
         @RequestHeader(HttpHeaders.AUTHORIZATION) String authorisation,
         @RequestParam("upliftToken") String pinUserAuthorisation,
@@ -46,7 +46,7 @@ public interface IdamApi {
 
     @RequestMapping(
         method = RequestMethod.POST,
-        value = "/oauth2/authorize",
+        value = "/o/authorize",
         consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE
     )
     AuthenticateUserResponse authenticatePinUser(
