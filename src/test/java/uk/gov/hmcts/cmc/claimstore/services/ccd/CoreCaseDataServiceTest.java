@@ -5,6 +5,8 @@ import feign.FeignException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import uk.gov.hmcts.cmc.ccd.domain.CCDCase;
@@ -12,10 +14,11 @@ import uk.gov.hmcts.cmc.ccd.domain.CaseEvent;
 import uk.gov.hmcts.cmc.ccd.mapper.CaseMapper;
 import uk.gov.hmcts.cmc.claimstore.idam.models.User;
 import uk.gov.hmcts.cmc.claimstore.idam.models.UserDetails;
-import uk.gov.hmcts.cmc.claimstore.services.IntentionToProceedDeadlineCalculator;
+import uk.gov.hmcts.cmc.claimstore.services.DirectionsQuestionnaireService;
 import uk.gov.hmcts.cmc.claimstore.services.JobSchedulerService;
 import uk.gov.hmcts.cmc.claimstore.services.ReferenceNumberService;
 import uk.gov.hmcts.cmc.claimstore.services.UserService;
+import uk.gov.hmcts.cmc.claimstore.services.WorkingDayIndicator;
 import uk.gov.hmcts.cmc.claimstore.services.notifications.fixtures.SampleUserDetails;
 import uk.gov.hmcts.cmc.claimstore.utils.CaseDetailsConverter;
 import uk.gov.hmcts.cmc.domain.models.Claim;
@@ -26,6 +29,7 @@ import uk.gov.hmcts.cmc.domain.models.CountyCourtJudgmentType;
 import uk.gov.hmcts.cmc.domain.models.PaidInFull;
 import uk.gov.hmcts.cmc.domain.models.ReDetermination;
 import uk.gov.hmcts.cmc.domain.models.ReviewOrder;
+import uk.gov.hmcts.cmc.domain.models.bulkprint.BulkPrintDetails;
 import uk.gov.hmcts.cmc.domain.models.claimantresponse.ClaimantResponse;
 import uk.gov.hmcts.cmc.domain.models.offers.MadeBy;
 import uk.gov.hmcts.cmc.domain.models.offers.Settlement;
@@ -46,6 +50,7 @@ import uk.gov.hmcts.reform.ccd.client.model.StartEventResponse;
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 import static java.time.LocalDate.now;
@@ -103,7 +108,15 @@ public class CoreCaseDataServiceTest {
     @Mock
     private CaseDetailsConverter caseDetailsConverter;
     @Mock
-    private IntentionToProceedDeadlineCalculator intentionToProceedDeadlineCalculator;
+    private WorkingDayIndicator workingDayIndicator;
+
+    private final int intentionToProceedDeadlineDays = 33;
+    @Mock
+    private feign.Request request;
+    @Mock
+    private DirectionsQuestionnaireService directionsQuestionnaireService;
+    @Captor
+    private ArgumentCaptor<Claim> claimArgumentCaptor;
 
     private CoreCaseDataService service;
 
@@ -153,7 +166,9 @@ public class CoreCaseDataServiceTest {
             jobSchedulerService,
             ccdCreateCaseService,
             caseDetailsConverter,
-            intentionToProceedDeadlineCalculator
+            intentionToProceedDeadlineDays,
+            workingDayIndicator,
+            directionsQuestionnaireService
         );
     }
 
@@ -298,7 +313,7 @@ public class CoreCaseDataServiceTest {
     @Test
     public void linkDefendantShouldBeSuccessful() {
         Claim providedClaim = SampleClaim.getDefault();
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(providedClaim);
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class))).thenReturn(providedClaim);
 
         CaseDetails caseDetails = service.linkDefendant(AUTHORISATION,
             providedClaim.getId(),
@@ -307,7 +322,7 @@ public class CoreCaseDataServiceTest {
             CaseEvent.LINK_DEFENDANT);
 
         assertNotNull(caseDetails);
-        verify(caseDetailsConverter).extractCCDCase(any(CaseDetails.class));
+        verify(caseDetailsConverter).extractClaim(any(CaseDetails.class));
     }
 
     @Test
@@ -315,13 +330,12 @@ public class CoreCaseDataServiceTest {
         Claim providedClaim = SampleClaim.withNoResponse();
         Claim expectedClaim = SampleClaim.claim(providedClaim.getClaimData(), "000MC001");
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(expectedClaim);
         when(caseDetailsConverter.extractClaim(any((CaseDetails.class)))).thenReturn(expectedClaim);
 
         Claim returnedClaim = service.requestMoreTimeForResponse(AUTHORISATION, providedClaim, FUTURE_DATE);
 
         assertEquals(expectedClaim, returnedClaim);
-        verify(caseDetailsConverter, atLeast(1)).extractCCDCase(any(CaseDetails.class));
+        verify(caseDetailsConverter, atLeast(1)).extractClaim(any(CaseDetails.class));
         assertEquals(SampleClaim.CLAIM_ID, returnedClaim.getId());
 
         verify(jobSchedulerService).rescheduleEmailNotificationsForDefendantResponse(providedClaim, FUTURE_DATE);
@@ -335,14 +349,14 @@ public class CoreCaseDataServiceTest {
             .ccjType(CountyCourtJudgmentType.DEFAULT)
             .build();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(providedClaim);
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class))).thenReturn(providedClaim);
 
         CaseDetails caseDetails = service.saveCountyCourtJudgment(AUTHORISATION,
             providedClaim.getId(),
             providedCCJ);
 
         assertNotNull(caseDetails);
-        verify(caseDetailsConverter).extractCCDCase(any(CaseDetails.class));
+        verify(caseDetailsConverter).extractClaim(any(CaseDetails.class));
     }
 
     @Test
@@ -350,8 +364,7 @@ public class CoreCaseDataServiceTest {
 
         URI sealedClaimUri = URI.create("http://localhost/sealedClaim.pdf");
         Claim claim = SampleClaim.getClaimWithSealedClaimLink(sealedClaimUri);
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(claim);
-        when(caseDetailsConverter.extractClaim(any((CaseDetails.class)))).thenReturn(claim);
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class))).thenReturn(claim);
 
         Claim updatedClaim = service.saveClaimDocuments(AUTHORISATION,
             SampleClaim.CLAIM_ID,
@@ -366,7 +379,8 @@ public class CoreCaseDataServiceTest {
         Claim providedClaim = SampleClaim.getDefault();
         Response providedResponse = SampleResponse.validDefaults();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(SampleClaim.getWithResponse(providedResponse));
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class)))
+            .thenReturn(SampleClaim.getWithResponse(providedResponse));
 
         CaseDetails caseDetails = service.saveDefendantResponse(providedClaim.getId(),
             "defendant@email.com",
@@ -382,7 +396,8 @@ public class CoreCaseDataServiceTest {
         Claim providedClaim = SampleClaim.getDefault();
         Response providedResponse = SampleResponse.FullAdmission.builder().build();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(SampleClaim.getWithResponse(providedResponse));
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class)))
+            .thenReturn(SampleClaim.getWithResponse(providedResponse));
 
         CaseDetails caseDetails = service.saveDefendantResponse(providedClaim.getId(),
             "defendant@email.com",
@@ -398,7 +413,8 @@ public class CoreCaseDataServiceTest {
         Claim providedClaim = SampleClaim.getDefault();
         Response providedResponse = SampleResponse.PartAdmission.builder().build();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(SampleClaim.getWithResponse(providedResponse));
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class)))
+            .thenReturn(SampleClaim.getWithResponse(providedResponse));
 
         CaseDetails caseDetails = service.saveDefendantResponse(providedClaim.getId(),
             "defendant@email.com",
@@ -415,7 +431,6 @@ public class CoreCaseDataServiceTest {
         Claim providedClaim = SampleClaim.getWithResponse(providedResponse);
         ClaimantResponse claimantResponse = SampleClaimantResponse.validDefaultAcceptation();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(getWithClaimantResponse());
         when(caseDetailsConverter.extractClaim(any((CaseDetails.class)))).thenReturn(getWithClaimantResponse());
 
         Claim claim = service.saveClaimantResponse(providedClaim.getId(),
@@ -436,7 +451,6 @@ public class CoreCaseDataServiceTest {
         ClaimantResponse claimantResponse = SampleClaimantResponse.ClaimantResponseAcceptation
             .builder().buildAcceptationIssueCCJWithDefendantPaymentIntention();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(getWithClaimantResponse());
         when(caseDetailsConverter.extractClaim(any(CaseDetails.class)))
             .thenReturn(getWithClaimantResponse());
 
@@ -458,7 +472,6 @@ public class CoreCaseDataServiceTest {
         ClaimantResponse claimantResponse = SampleClaimantResponse.ClaimantResponseAcceptation
             .builder().buildAcceptationIssueSettlementWithClaimantPaymentIntention();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(getWithClaimantResponse());
         when(caseDetailsConverter.extractClaim(any((CaseDetails.class)))).thenReturn(getWithClaimantResponse());
 
         Claim claim = service.saveClaimantResponse(providedClaim.getId(), claimantResponse, AUTHORISATION);
@@ -475,7 +488,6 @@ public class CoreCaseDataServiceTest {
         Claim providedClaim = SampleClaim.getWithResponse(providedResponse);
         ClaimantResponse claimantResponse = SampleClaimantResponse.validDefaultRejection();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(getWithClaimantResponse());
         when(caseDetailsConverter.extractClaim(any((CaseDetails.class)))).thenReturn(getWithClaimantResponse());
 
         Claim claim = service.saveClaimantResponse(providedClaim.getId(),
@@ -485,6 +497,8 @@ public class CoreCaseDataServiceTest {
 
         assertThat(claim).isNotNull();
         assertThat(claim.getClaimantResponse()).isPresent();
+        verify(directionsQuestionnaireService, atLeastOnce()).getPreferredCourt(claimArgumentCaptor.capture());
+        assertThat(claimArgumentCaptor.getValue().getClaimantResponse()).isPresent();
         verify(coreCaseDataApi, atLeastOnce()).startEventForCitizen(anyString(), anyString(), anyString(), anyString(),
             anyString(), anyString(), eq(CLAIMANT_RESPONSE_REJECTION.getValue()));
     }
@@ -493,7 +507,8 @@ public class CoreCaseDataServiceTest {
     public void saveSettlementShouldReturnCaseDetails() {
         Settlement providedSettlement = SampleSettlement.validDefaults();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(SampleClaim.getWithSettlement(providedSettlement));
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class)))
+            .thenReturn(SampleClaim.getWithSettlement(providedSettlement));
 
         CaseDetails caseDetails = service.saveSettlement(
             SampleClaim.CLAIM_ID,
@@ -509,7 +524,7 @@ public class CoreCaseDataServiceTest {
     public void reachSettlementAgreementShouldReturnCaseDetails() {
         Settlement providedSettlement = SampleSettlement.validDefaults();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(SampleClaim.withSettlementReached());
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class))).thenReturn(SampleClaim.withSettlementReached());
 
         CaseDetails caseDetails = service.reachSettlementAgreement(
             SampleClaim.CLAIM_ID,
@@ -525,7 +540,8 @@ public class CoreCaseDataServiceTest {
     public void updateResponseDeadlineShouldReturnCaseDetails() {
         Claim providedClaim = SampleClaim.getDefault();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(SampleClaim.getWithResponseDeadline(FUTURE_DATE));
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class)))
+            .thenReturn(SampleClaim.getWithResponseDeadline(FUTURE_DATE));
 
         CaseDetails caseDetails = service.updateResponseDeadline(AUTHORISATION, providedClaim.getId(), FUTURE_DATE);
 
@@ -539,7 +555,8 @@ public class CoreCaseDataServiceTest {
         Response providedResponse = SampleResponse.validDefaults();
         Claim providedClaim = SampleClaim.getWithResponse(providedResponse);
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(SampleClaim.getWithResponse(providedResponse));
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class)))
+            .thenReturn(SampleClaim.getWithResponse(providedResponse));
 
         service.saveDirectionsQuestionnaireDeadline(providedClaim.getId(), FUTURE_DATE, AUTHORISATION);
 
@@ -577,7 +594,7 @@ public class CoreCaseDataServiceTest {
 
         Claim claim = SampleClaim.getDefault();
 
-        when(caseMapper.from(any(CCDCase.class)))
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class)))
             .thenReturn(SampleClaim.builder().withReDetermination(reDetermination).build());
 
         service.saveReDetermination(AUTHORISATION, claim.getId(), reDetermination, REFER_TO_JUDGE_BY_CLAIMANT);
@@ -591,7 +608,7 @@ public class CoreCaseDataServiceTest {
         Claim claim = SampleClaim.getDefault();
         PaidInFull paidInFull = PaidInFull.builder().moneyReceivedOn(now()).build();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(claim);
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class))).thenReturn(claim);
 
         service.savePaidInFull(claim.getId(), paidInFull, AUTHORISATION);
 
@@ -603,7 +620,7 @@ public class CoreCaseDataServiceTest {
     public void linkLetterHolderId() {
         Claim claim = SampleClaim.getDefault();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(claim);
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class))).thenReturn(claim);
         when(userService.authenticateAnonymousCaseWorker()).thenReturn(USER);
 
         String newLetterHolderId = "letter_holder_id";
@@ -622,7 +639,7 @@ public class CoreCaseDataServiceTest {
         ClaimSubmissionOperationIndicators operationIndicators = ClaimSubmissionOperationIndicators.builder().build();
         Claim claim = SampleClaim.getDefault();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(claim);
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class))).thenReturn(claim);
 
         service.saveClaimSubmissionOperationIndicators(claim.getId(), operationIndicators, AUTHORISATION,
             PIN_GENERATION_OPERATIONS);
@@ -636,7 +653,7 @@ public class CoreCaseDataServiceTest {
         Claim claim = SampleClaim.getDefault();
         ReviewOrder reviewOrder = SampleReviewOrder.getDefault();
 
-        when(caseMapper.from(any(CCDCase.class))).thenReturn(claim);
+        when(caseDetailsConverter.extractClaim(any(CaseDetails.class))).thenReturn(claim);
 
         service.saveReviewOrder(claim.getId(), reviewOrder, AUTHORISATION);
 
@@ -654,7 +671,7 @@ public class CoreCaseDataServiceTest {
 
         service.saveBulkPrintLetterIdToClaim(
             AUTHORISATION,
-            UUID.randomUUID().toString(),
+            List.of(BulkPrintDetails.builder().bulkPrintLetterId(UUID.randomUUID().toString()).build()),
             CaseEvent.UPDATE_BULK_PRINT_LETTER_ID,
             claim.getId());
 
@@ -678,7 +695,7 @@ public class CoreCaseDataServiceTest {
             anyBoolean(),
             any()
         ))
-            .thenThrow(new FeignException.UnprocessableEntity("Status 422 from CCD", null));
+            .thenThrow(new FeignException.UnprocessableEntity("Status 422 from CCD", request, null));
 
         Claim returnedClaim = service.saveCaseEventIOC(USER, providedClaim, CREATE_CITIZEN_CLAIM);
 

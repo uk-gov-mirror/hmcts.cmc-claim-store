@@ -11,8 +11,9 @@ import uk.gov.hmcts.cmc.ccd.domain.CaseEvent;
 import uk.gov.hmcts.cmc.claimstore.appinsights.AppInsights;
 import uk.gov.hmcts.cmc.claimstore.documents.bulkprint.PrintableTemplate;
 import uk.gov.hmcts.cmc.claimstore.services.ClaimService;
-import uk.gov.hmcts.cmc.claimstore.services.livesupport.BulkPrintNotificationService;
+import uk.gov.hmcts.cmc.claimstore.services.staff.BulkPrintStaffNotificationService;
 import uk.gov.hmcts.cmc.domain.models.Claim;
+import uk.gov.hmcts.cmc.domain.models.bulkprint.BulkPrintDetails;
 import uk.gov.hmcts.cmc.domain.models.sampledata.SampleClaim;
 import uk.gov.hmcts.reform.authorisation.generators.AuthTokenGenerator;
 import uk.gov.hmcts.reform.pdf.service.client.PDFServiceClient;
@@ -65,7 +66,7 @@ public class BulkPrintServiceTest {
     private AuthTokenGenerator authTokenGenerator;
     private BulkPrintService bulkPrintService;
     @Mock
-    private BulkPrintNotificationService bulkPrintNotificationService;
+    private BulkPrintStaffNotificationService bulkPrintStaffNotificationService;
     @Mock
     private PDFServiceClient pdfServiceClient;
     @Mock
@@ -94,7 +95,7 @@ public class BulkPrintServiceTest {
         bulkPrintService = new BulkPrintService(
             sendLetterApi,
             authTokenGenerator,
-            bulkPrintNotificationService,
+            bulkPrintStaffNotificationService,
             appInsights,
             pdfServiceClient,
             claimService
@@ -126,7 +127,7 @@ public class BulkPrintServiceTest {
         bulkPrintService = new BulkPrintService(
             sendLetterApi,
             authTokenGenerator,
-            bulkPrintNotificationService,
+            bulkPrintStaffNotificationService,
             appInsights,
             pdfServiceClient,
             claimService
@@ -140,7 +141,7 @@ public class BulkPrintServiceTest {
 
         verify(claimService).saveBulkPrintLetterId(
             eq(AUTH_VALUE),
-            eq(bulkPrintLetterId.toString()),
+            eq(ImmutableList.of(BulkPrintDetails.builder().bulkPrintLetterId(bulkPrintLetterId.toString()).build())),
             eq(CaseEvent.UPDATE_BULK_PRINT_LETTER_ID),
             eq(CLAIM));
 
@@ -161,7 +162,7 @@ public class BulkPrintServiceTest {
         bulkPrintService = new BulkPrintService(
             sendLetterApi,
             authTokenGenerator,
-            bulkPrintNotificationService,
+            bulkPrintStaffNotificationService,
             appInsights,
             pdfServiceClient,
             claimService
@@ -169,7 +170,33 @@ public class BulkPrintServiceTest {
         //when
         bulkPrintService.printPdf(CLAIM, ImmutableList.of(
             new PrintableTemplate(coversheetForClaimant, "filename"),
-            new PrintableTemplate(legalOrderDocument, "filename")),
+            new PrintableTemplate(legalOrderDocument, "filename")
+            ), "general-order",
+            AUTHORISATION);
+
+        verify(sendLetterApi).sendLetter(eq(AUTH_VALUE), any(LetterWithPdfsRequest.class));
+    }
+
+    @Test
+    public void shouldSendGeneralLetter() {
+        //given
+        when(sendLetterApi.sendLetter(eq(AUTH_VALUE), any(LetterWithPdfsRequest.class)))
+            .thenReturn(new SendLetterResponse(UUID.randomUUID()));
+
+        Document generalLetter = new Document("generalLetter", Collections.emptyMap());
+
+        bulkPrintService = new BulkPrintService(
+            sendLetterApi,
+            authTokenGenerator,
+            bulkPrintStaffNotificationService,
+            appInsights,
+            pdfServiceClient,
+            claimService
+        );
+        //when
+        bulkPrintService.printPdf(CLAIM, ImmutableList.of(
+            new PrintableTemplate(generalLetter, "filename")
+            ), "general-letter",
             AUTHORISATION
         );
 
@@ -187,7 +214,7 @@ public class BulkPrintServiceTest {
         bulkPrintService = new BulkPrintService(
             sendLetterApi,
             authTokenGenerator,
-            bulkPrintNotificationService,
+            bulkPrintStaffNotificationService,
             appInsights,
             pdfServiceClient,
             claimService
@@ -215,7 +242,7 @@ public class BulkPrintServiceTest {
         bulkPrintService = new BulkPrintService(
             sendLetterApi,
             authTokenGenerator,
-            bulkPrintNotificationService,
+            bulkPrintStaffNotificationService,
             appInsights,
             pdfServiceClient,
             claimService
@@ -235,7 +262,7 @@ public class BulkPrintServiceTest {
                     AUTHORISATION);
         } finally {
             //then
-            verify(bulkPrintNotificationService).notifyFailedBulkPrint(
+            verify(bulkPrintStaffNotificationService).notifyFailedBulkPrint(
                 eq(ImmutableList.of(
                     new PrintableTemplate(defendantLetterDocument, "filename"),
                     new PrintableTemplate(sealedClaimDocument, "filename"))),

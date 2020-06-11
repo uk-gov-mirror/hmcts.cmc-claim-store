@@ -23,8 +23,8 @@ import uk.gov.hmcts.reform.payments.client.models.PaymentDto;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.time.OffsetDateTime;
+import java.util.Optional;
 
-import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -36,7 +36,7 @@ import static uk.gov.hmcts.cmc.domain.models.sampledata.SamplePayment.PAYMENT_RE
 @RunWith(MockitoJUnitRunner.class)
 public class PaymentsServiceTest {
     private static final String BEARER_TOKEN = "Bearer let me in";
-    private static final String RETURN_URL = "http://returnUrl.test/blah/%s/test";
+    private static final String RETURN_URL = "http://returnUrl.test";
     private static final String SERVICE = "CMC";
     private static final String SITE_ID = "siteId";
     private static final String CURRENCY = "currency";
@@ -69,7 +69,6 @@ public class PaymentsServiceTest {
         paymentsService = new PaymentsService(
             paymentsClient,
             feesClient,
-            RETURN_URL,
             SERVICE,
             SITE_ID,
             CURRENCY,
@@ -90,15 +89,16 @@ public class PaymentsServiceTest {
         Payment expectedPayment = Payment.builder()
             .status(PaymentStatus.SUCCESS)
             .nextUrl(NEXT_URL)
+            .returnUrl(RETURN_URL)
             .dateCreated(PAYMENT_DATE.toLocalDate().toString())
             .build();
 
-        Payment payment = paymentsService.retrievePayment(
+        Optional<Payment> payment = paymentsService.retrievePayment(
             BEARER_TOKEN,
-            claim
+            claim.getClaimData()
         );
 
-        assertThat(payment).isEqualTo(expectedPayment);
+        assertThat(payment).contains(expectedPayment);
     }
 
     @Test
@@ -116,19 +116,20 @@ public class PaymentsServiceTest {
         Payment expectedPayment = Payment.builder()
             .status(PaymentStatus.SUCCESS)
             .nextUrl(null)
+            .returnUrl(RETURN_URL)
             .dateCreated(PAYMENT_DATE.toLocalDate().toString())
             .build();
 
-        Payment payment = paymentsService.retrievePayment(
+        Optional<Payment> payment = paymentsService.retrievePayment(
             BEARER_TOKEN,
-            claim
+            claim.getClaimData()
         );
 
-        assertThat(payment).isEqualTo(expectedPayment);
+        assertThat(payment).contains(expectedPayment);
     }
 
     @Test
-    public void shouldRetrieveAnExistingPaymentWithNoCreatedDate() {
+    public void shouldRetrieveAnExistingPaymentWithCreatedDate() {
         PaymentDto retrievedPayment = PaymentDto.builder()
             .status("Success")
             .dateCreated(null)
@@ -144,25 +145,24 @@ public class PaymentsServiceTest {
         Payment expectedPayment = Payment.builder()
             .status(PaymentStatus.SUCCESS)
             .nextUrl(NEXT_URL)
-            .dateCreated(null)
+            .dateCreated(claim.getClaimData().getPayment().map(Payment::getDateCreated).orElse(null))
+            .returnUrl(RETURN_URL)
             .build();
 
-        Payment payment = paymentsService.retrievePayment(
+        Optional<Payment> payment = paymentsService.retrievePayment(
             BEARER_TOKEN,
-            claim
+            claim.getClaimData()
         );
 
-        assertThat(payment).isEqualTo(expectedPayment);
+        assertThat(payment).contains(expectedPayment);
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void shouldThrowWhenPaymentIsNotPresent() {
-        paymentsService.retrievePayment(
+    @Test
+    public void shouldReturnEmptyWhenPaymentIsNotPresent() {
+        assertThat(paymentsService.retrievePayment(
             BEARER_TOKEN,
-            SampleClaim.builder().withClaimData(
-                SampleClaimData.builder().withPayment(null).build()
-            ).build()
-        );
+            SampleClaimData.builder().withPayment(null).build()
+        )).isEmpty();
     }
 
     @Test
@@ -191,7 +191,7 @@ public class PaymentsServiceTest {
         when(paymentsClient.createPayment(
             BEARER_TOKEN,
             expectedPaymentRequest,
-            format(RETURN_URL, claim.getExternalId())
+            RETURN_URL
         )).thenReturn(paymentDto);
 
         paymentsService.createPayment(
@@ -200,6 +200,72 @@ public class PaymentsServiceTest {
         );
 
         verify(paymentDto).setAmount(BigDecimal.TEN);
+    }
+
+    @Test
+    public void shouldRetrieveAnExistingPaymentWithTransactionId() {
+        String externalReference = "External Reference";
+        PaymentDto retrievedPayment = PaymentDto.builder()
+            .status("Success")
+            .dateCreated(null)
+            .externalReference(externalReference)
+            .links(LinksDto.builder().nextUrl(
+                LinkDto.builder().href(URI.create(NEXT_URL)).build())
+                .build())
+            .build();
+        when(paymentsClient.retrievePayment(
+            BEARER_TOKEN,
+            PAYMENT_REFERENCE
+        )).thenReturn(retrievedPayment);
+
+        Payment expectedPayment = Payment.builder()
+            .status(PaymentStatus.SUCCESS)
+            .nextUrl(NEXT_URL)
+            .returnUrl(RETURN_URL)
+            .dateCreated(claim.getClaimData().getPayment().map(Payment::getDateCreated).orElse(null))
+            .transactionId(externalReference)
+            .build();
+
+        Optional<Payment> payment = paymentsService.retrievePayment(
+            BEARER_TOKEN,
+            claim.getClaimData()
+        );
+
+        assertThat(payment).contains(expectedPayment);
+    }
+
+    @Test
+    public void shouldRetrieveAnExistingPaymentWithFeeId() {
+        Integer feeId = 999;
+
+        FeeDto[] fees = {FeeDto.builder().id(feeId).build()};
+        PaymentDto retrievedPayment = PaymentDto.builder()
+            .status("Success")
+            .dateCreated(null)
+            .fees(fees)
+            .links(LinksDto.builder().nextUrl(
+                LinkDto.builder().href(URI.create(NEXT_URL)).build())
+                .build())
+            .build();
+        when(paymentsClient.retrievePayment(
+            BEARER_TOKEN,
+            PAYMENT_REFERENCE
+        )).thenReturn(retrievedPayment);
+
+        Payment expectedPayment = Payment.builder()
+            .status(PaymentStatus.SUCCESS)
+            .nextUrl(NEXT_URL)
+            .returnUrl(RETURN_URL)
+            .dateCreated(claim.getClaimData().getPayment().map(Payment::getDateCreated).orElse(null))
+            .feeId(feeId.toString())
+            .build();
+
+        Optional<Payment> payment = paymentsService.retrievePayment(
+            BEARER_TOKEN,
+            claim.getClaimData()
+        );
+
+        assertThat(payment).contains(expectedPayment);
     }
 
     @Test(expected = IllegalStateException.class)

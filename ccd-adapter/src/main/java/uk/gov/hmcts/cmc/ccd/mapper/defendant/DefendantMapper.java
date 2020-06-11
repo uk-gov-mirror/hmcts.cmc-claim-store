@@ -55,6 +55,7 @@ public class DefendantMapper {
         respondentBuilder.responseDeadline(claim.getResponseDeadline());
         respondentBuilder.letterHolderId(claim.getLetterHolderId());
         respondentBuilder.defendantId(claim.getDefendantId());
+        respondentBuilder.responseSubmittedOn(claim.getRespondedAt());
 
         CCDParty.CCDPartyBuilder partyDetail = CCDParty.builder();
         partyDetail.emailAddress(claim.getDefendantEmail());
@@ -74,7 +75,7 @@ public class DefendantMapper {
         respondentBuilder.settlementReachedAt(claim.getSettlementReachedAt());
 
         respondentBuilder.partyDetail(partyDetail.build());
-        claim.getResponse().ifPresent(toResponse(claim, respondentBuilder, partyDetail));
+        claim.getResponse().ifPresent(toResponse(respondentBuilder, partyDetail));
 
         theirDetailsMapper.to(respondentBuilder, theirDetails);
 
@@ -127,13 +128,11 @@ public class DefendantMapper {
     }
 
     private Consumer<Response> toResponse(
-        Claim claim,
         CCDRespondent.CCDRespondentBuilder builder,
         CCDParty.CCDPartyBuilder partyDetail
     ) {
         return response -> {
             responseMapper.to(builder, response, partyDetail);
-            builder.responseSubmittedOn(claim.getRespondedAt());
         };
     }
 }

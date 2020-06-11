@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.hmcts.cmc.claimstore.utils.CommonErrors.MISSING_RESPONSE;
 import static uk.gov.hmcts.cmc.claimstore.utils.Formatting.formatDate;
 
 public class DefendantResponseContentProviderTest {
@@ -89,11 +90,14 @@ public class DefendantResponseContentProviderTest {
     public void shouldProvideResponseDefence() {
         Map<String, Object> content = provider.createContent(claim);
 
+        List<String> expected = ((FullDefenceResponse) claim.getResponse()
+            .orElseThrow(() -> new AssertionError(MISSING_RESPONSE)))
+            .getDefence()
+            .map(ImmutableList::of)
+            .map(immutableList -> (List<String>) immutableList)
+            .orElseGet(Collections::emptyList);
         assertThat(content)
-            .containsEntry("responseDefence",
-                ((FullDefenceResponse) claim.getResponse().orElseThrow(IllegalStateException::new))
-                    .getDefence().map(ImmutableList::of).map(List.class::cast).orElseGet(Collections::emptyList)
-            );
+            .containsEntry("responseDefence", expected);
     }
 
     @Test
@@ -108,12 +112,8 @@ public class DefendantResponseContentProviderTest {
     public void shouldProvidePaymentDeclaration() {
         Map<String, Object> content = provider.createContent(claim);
 
-        assertThat(content).containsKey("paymentDeclaration");
-        assertThat(content.get("paymentDeclaration")).isInstanceOf(Map.class);
-        assertThat((Map<String, String>) content.get("paymentDeclaration"))
-            .containsOnlyKeys("paidDate", "explanation")
-            .containsEntry("paidDate", "2 January 2016")
-            .containsEntry("explanation", "Paid cash");
+        assertThat(content).containsEntry("paymentDate", "2 January 2016");
+        assertThat(content).containsEntry("paymentMethod", "Paid cash");
     }
 
     @Test

@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Value;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 public class CCDAddress {
 
     @JsonProperty("AddressLine1")
@@ -20,4 +20,6 @@ public class CCDAddress {
     private String postCode;
     @JsonProperty("Country")
     private String country;
+    @JsonProperty("County")
+    private String county;
 }

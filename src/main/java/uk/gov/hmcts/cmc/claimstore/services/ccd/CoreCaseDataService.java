@@ -1,11 +1,11 @@
 package uk.gov.hmcts.cmc.claimstore.services.ccd;
 
-import com.sun.tools.javac.util.List;
 import feign.FeignException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.cmc.ccd.domain.CCDCase;
@@ -16,13 +16,14 @@ import uk.gov.hmcts.cmc.claimstore.exceptions.ConflictException;
 import uk.gov.hmcts.cmc.claimstore.exceptions.CoreCaseDataStoreException;
 import uk.gov.hmcts.cmc.claimstore.idam.models.User;
 import uk.gov.hmcts.cmc.claimstore.idam.models.UserDetails;
-import uk.gov.hmcts.cmc.claimstore.services.IntentionToProceedDeadlineCalculator;
+import uk.gov.hmcts.cmc.claimstore.services.DirectionsQuestionnaireService;
 import uk.gov.hmcts.cmc.claimstore.services.JobSchedulerService;
 import uk.gov.hmcts.cmc.claimstore.services.ReferenceNumberService;
+import uk.gov.hmcts.cmc.claimstore.services.StateTransitionCalculator;
 import uk.gov.hmcts.cmc.claimstore.services.UserService;
+import uk.gov.hmcts.cmc.claimstore.services.WorkingDayIndicator;
 import uk.gov.hmcts.cmc.claimstore.stereotypes.LogExecutionTime;
 import uk.gov.hmcts.cmc.claimstore.utils.CaseDetailsConverter;
-import uk.gov.hmcts.cmc.claimstore.utils.DirectionsQuestionnaireUtils;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 import uk.gov.hmcts.cmc.domain.models.ClaimDocumentCollection;
 import uk.gov.hmcts.cmc.domain.models.ClaimDocumentType;
@@ -32,9 +33,7 @@ import uk.gov.hmcts.cmc.domain.models.CountyCourtJudgmentType;
 import uk.gov.hmcts.cmc.domain.models.PaidInFull;
 import uk.gov.hmcts.cmc.domain.models.ReDetermination;
 import uk.gov.hmcts.cmc.domain.models.ReviewOrder;
-import uk.gov.hmcts.cmc.domain.models.bulkprint.BulkPrintCollection;
 import uk.gov.hmcts.cmc.domain.models.bulkprint.BulkPrintDetails;
-import uk.gov.hmcts.cmc.domain.models.bulkprint.BulkPrintLetterType;
 import uk.gov.hmcts.cmc.domain.models.claimantresponse.ClaimantResponse;
 import uk.gov.hmcts.cmc.domain.models.offers.Settlement;
 import uk.gov.hmcts.cmc.domain.models.response.FullDefenceResponse;
@@ -49,7 +48,7 @@ import uk.gov.hmcts.reform.ccd.client.model.StartEventResponse;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -100,7 +99,9 @@ public class CoreCaseDataService {
     private final JobSchedulerService jobSchedulerService;
     private final CCDCreateCaseService ccdCreateCaseService;
     private final CaseDetailsConverter caseDetailsConverter;
-    private final IntentionToProceedDeadlineCalculator intentionToProceedDeadlineCalculator;
+    private final WorkingDayIndicator workingDayIndicator;
+    private final int intentionToProceedDeadlineDays;
+    private final DirectionsQuestionnaireService directionsQuestionnaireService;
 
     @SuppressWarnings("squid:S00107") // All parameters are required here
     @Autowired
@@ -113,7 +114,10 @@ public class CoreCaseDataService {
         JobSchedulerService jobSchedulerService,
         CCDCreateCaseService ccdCreateCaseService,
         CaseDetailsConverter caseDetailsConverter,
-        IntentionToProceedDeadlineCalculator intentionToProceedDeadlineCalculator
+        @Value("#{new Integer('${dateCalculations.stayClaimDeadlineInDays}')}")
+            Integer intentionToProceedDeadlineDays,
+        WorkingDayIndicator workingDayIndicator,
+        DirectionsQuestionnaireService directionsQuestionnaireService
     ) {
         this.caseMapper = caseMapper;
         this.userService = userService;
@@ -123,7 +127,9 @@ public class CoreCaseDataService {
         this.jobSchedulerService = jobSchedulerService;
         this.ccdCreateCaseService = ccdCreateCaseService;
         this.caseDetailsConverter = caseDetailsConverter;
-        this.intentionToProceedDeadlineCalculator = intentionToProceedDeadlineCalculator;
+        this.workingDayIndicator = workingDayIndicator;
+        this.intentionToProceedDeadlineDays = intentionToProceedDeadlineDays;
+        this.directionsQuestionnaireService = directionsQuestionnaireService;
     }
 
     @LogExecutionTime
@@ -434,8 +440,8 @@ public class CoreCaseDataService {
             );
 
             LocalDateTime respondedAt = nowInUTC();
-            LocalDate intentionToProceedDeadline =
-                intentionToProceedDeadlineCalculator.calculateIntentionToProceedDeadline(respondedAt.toLocalDate());
+            LocalDate intentionToProceedDeadline = new StateTransitionCalculator(workingDayIndicator,
+                intentionToProceedDeadlineDays).calculateDeadlineFromDate(respondedAt.toLocalDate());
 
             Claim updatedClaim = toClaimBuilder(startEventResponse)
                 .response(response)
@@ -496,14 +502,14 @@ public class CoreCaseDataService {
             );
 
             Claim existingClaim = toClaim(startEventResponse);
-            Claim updatedClaim = existingClaim.toBuilder()
-                .claimantResponse(response)
+            Claim.ClaimBuilder claimBuilder = existingClaim.toBuilder();
+
+            claimBuilder.claimantResponse(response)
                 .claimantRespondedAt(nowInUTC())
                 .dateReferredForDirections(nowInUTC())
-                .preferredDQCourt(getPreferredCourt(existingClaim))
-                .build();
+                .preferredDQCourt(getPreferredCourt(claimBuilder.build()));
 
-            CaseDataContent caseDataContent = caseDataContent(startEventResponse, updatedClaim);
+            CaseDataContent caseDataContent = caseDataContent(startEventResponse, claimBuilder.build());
 
             return caseDetailsConverter.extractClaim(submitUpdate(authorisation,
                 eventRequestData,
@@ -525,7 +531,7 @@ public class CoreCaseDataService {
 
     private String getPreferredCourt(Claim existingClaim) {
         try {
-            return DirectionsQuestionnaireUtils.getPreferredCourt(existingClaim);
+            return directionsQuestionnaireService.getPreferredCourt(existingClaim);
         } catch (Exception e) {
             return null;
         }
@@ -703,7 +709,7 @@ public class CoreCaseDataService {
     }
 
     private Claim toClaim(StartEventResponse startEventResponse) {
-        return caseMapper.from(caseDetailsConverter.extractCCDCase(startEventResponse.getCaseDetails()));
+        return caseDetailsConverter.extractClaim(startEventResponse.getCaseDetails());
     }
 
     private CaseDataContent caseDataContent(StartEventResponse startEventResponse, Claim ccdClaim) {
@@ -1022,8 +1028,7 @@ public class CoreCaseDataService {
                 isRepresented(userDetails)
             );
 
-            CCDCase ccdCase = caseDetailsConverter.extractCCDCase(startEventResponse.getCaseDetails());
-            Claim claim = caseMapper.from(ccdCase);
+            Claim claim = caseDetailsConverter.extractClaim(startEventResponse.getCaseDetails());
 
             Claim updatedClaim = claim.toBuilder()
                 .letterHolderId(letterHolderId)
@@ -1134,7 +1139,7 @@ public class CoreCaseDataService {
 
     public Claim saveBulkPrintLetterIdToClaim(
         String authorisation,
-        BulkPrintCollection bulkPrintCollection,
+        List<BulkPrintDetails> bulkPrintCollection,
         CaseEvent caseEvent,
         Long caseId
     ) {

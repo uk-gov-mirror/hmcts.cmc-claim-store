@@ -8,14 +8,18 @@ import org.mockito.junit.MockitoJUnitRunner;
 import uk.gov.hmcts.cmc.claimstore.documents.bulkprint.PrintablePdf;
 import uk.gov.hmcts.cmc.claimstore.documents.bulkprint.PrintableTemplate;
 import uk.gov.hmcts.cmc.claimstore.events.DocumentReadyToPrintEvent;
+import uk.gov.hmcts.cmc.claimstore.events.GeneralLetterReadyToPrintEvent;
 import uk.gov.hmcts.cmc.claimstore.events.legaladvisor.DirectionsOrderReadyToPrintEvent;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 import uk.gov.hmcts.cmc.domain.models.sampledata.SampleClaim;
 import uk.gov.hmcts.reform.sendletter.api.Document;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 
 import static org.mockito.Mockito.verify;
+import static uk.gov.hmcts.cmc.claimstore.documents.BulkPrintService.DIRECTION_ORDER_LETTER_TYPE;
+import static uk.gov.hmcts.cmc.claimstore.documents.BulkPrintService.GENERAL_LETTER_TYPE;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BulkPrintHandlerTest {
@@ -77,8 +81,35 @@ public class BulkPrintHandlerTest {
                     claim.getReferenceNumber() + "-directions-order-cover-sheet"),
                 new PrintablePdf(
                     legalOrder,
-                    claim.getReferenceNumber() + "-directions-order")),
-            AUTHORISATION
-        );
+                    claim.getReferenceNumber() + "-directions-order")
+            ),
+            DIRECTION_ORDER_LETTER_TYPE,
+            AUTHORISATION);
+    }
+
+    @Test
+    public void notifyForGeneralLetter() {
+        //given
+        BulkPrintHandler bulkPrintHandler = new BulkPrintHandler(bulkPrintService);
+        Claim claim = SampleClaim.getDefault();
+        Document generalLetter = new Document("letter", new HashMap<>());
+
+        GeneralLetterReadyToPrintEvent printEvent
+            = new GeneralLetterReadyToPrintEvent(claim, generalLetter, AUTHORISATION);
+
+        //when
+        bulkPrintHandler.print(printEvent);
+
+        //verify
+        verify(bulkPrintService).printPdf(
+            claim,
+            ImmutableList.of(
+                new PrintablePdf(
+                    generalLetter,
+                    claim.getReferenceNumber() + "-general-letter-"
+                        + LocalDate.now())
+            ),
+            GENERAL_LETTER_TYPE,
+            AUTHORISATION);
     }
 }

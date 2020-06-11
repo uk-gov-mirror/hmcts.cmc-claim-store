@@ -1,16 +1,21 @@
 package uk.gov.hmcts.cmc.claimstore.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.cmc.ccd.domain.CaseEvent;
+import uk.gov.hmcts.cmc.claimstore.documents.ClaimantResponseReceiptService;
+import uk.gov.hmcts.cmc.claimstore.documents.output.PDF;
 import uk.gov.hmcts.cmc.claimstore.events.EventProducer;
 import uk.gov.hmcts.cmc.claimstore.repositories.CaseRepository;
+import uk.gov.hmcts.cmc.claimstore.services.document.DocumentsService;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 import uk.gov.hmcts.cmc.domain.models.CountyCourtJudgment;
 import uk.gov.hmcts.cmc.domain.models.CountyCourtJudgmentType;
 import uk.gov.hmcts.cmc.domain.models.RepaymentPlan;
 import uk.gov.hmcts.cmc.domain.models.claimantresponse.CourtDetermination;
 import uk.gov.hmcts.cmc.domain.models.claimantresponse.DecisionType;
+import uk.gov.hmcts.cmc.domain.models.claimantresponse.FormaliseOption;
 import uk.gov.hmcts.cmc.domain.models.claimantresponse.ResponseAcceptation;
 import uk.gov.hmcts.cmc.domain.models.offers.MadeBy;
 import uk.gov.hmcts.cmc.domain.models.offers.Offer;
@@ -29,6 +34,11 @@ import java.util.Optional;
 
 import static uk.gov.hmcts.cmc.ccd.domain.CaseEvent.INTERLOCUTORY_JUDGMENT;
 import static uk.gov.hmcts.cmc.ccd.domain.CaseEvent.REJECT_ORGANISATION_PAYMENT_PLAN;
+import static uk.gov.hmcts.cmc.claimstore.utils.CommonErrors.MISSING_PAYMENT_DATE;
+import static uk.gov.hmcts.cmc.claimstore.utils.CommonErrors.MISSING_PAYMENT_INTENTION;
+import static uk.gov.hmcts.cmc.claimstore.utils.CommonErrors.MISSING_RESPONSE;
+import static uk.gov.hmcts.cmc.claimstore.utils.DocumentNameUtils.buildRequestForInterlocutoryJudgmentFileBaseName;
+import static uk.gov.hmcts.cmc.claimstore.utils.DocumentNameUtils.buildRequestOrgRepaymentFileBaseName;
 import static uk.gov.hmcts.cmc.claimstore.utils.Formatting.formatDate;
 import static uk.gov.hmcts.cmc.claimstore.utils.Formatting.formatMoney;
 import static uk.gov.hmcts.cmc.domain.utils.PartyUtils.isCompanyOrOrganisation;
@@ -40,22 +50,33 @@ public class FormaliseResponseAcceptanceService {
     private final SettlementAgreementService settlementAgreementService;
     private final EventProducer eventProducer;
     private final CaseRepository caseRepository;
+    private final ClaimantResponseReceiptService claimantResponseReceiptService;
+    private final DocumentsService documentService;
+    private final boolean ctscEnabled;
 
     @Autowired
     public FormaliseResponseAcceptanceService(
         CountyCourtJudgmentService countyCourtJudgmentService,
         SettlementAgreementService settlementAgreementService,
         EventProducer eventProducer,
-        CaseRepository caseRepository
+        CaseRepository caseRepository,
+        DocumentsService documentService,
+        @Value("${feature_toggles.ctsc_enabled}") boolean ctscEnabled,
+        ClaimantResponseReceiptService claimantResponseReceiptService
     ) {
         this.countyCourtJudgmentService = countyCourtJudgmentService;
         this.settlementAgreementService = settlementAgreementService;
         this.eventProducer = eventProducer;
         this.caseRepository = caseRepository;
+        this.claimantResponseReceiptService = claimantResponseReceiptService;
+        this.documentService = documentService;
+        this.ctscEnabled = ctscEnabled;
     }
 
     public void formalise(Claim claim, ResponseAcceptation responseAcceptation, String authorisation) {
-        switch (responseAcceptation.getFormaliseOption().orElseThrow(IllegalStateException::new)) {
+        FormaliseOption formaliseOption = responseAcceptation.getFormaliseOption()
+            .orElseThrow(() -> new IllegalStateException("Missing formalise option"));
+        switch (formaliseOption) {
             case CCJ:
                 formaliseCCJ(claim, responseAcceptation, authorisation);
                 break;
@@ -71,21 +92,30 @@ public class FormaliseResponseAcceptanceService {
     }
 
     private void createEventForReferToJudge(Claim claim, String authorisation) {
-        Response response = claim.getResponse().orElseThrow(IllegalArgumentException::new);
+        Response response = claim.getResponse()
+            .orElseThrow(() -> new IllegalArgumentException(MISSING_RESPONSE));
+
         CaseEvent caseEvent;
+        Claim updatedClaim;
         if (isCompanyOrOrganisation(response.getDefendant())) {
-            eventProducer.createRejectOrganisationPaymentPlanEvent(claim);
+            updatedClaim = uploadClaimantResponseToDocumentStore(claim, authorisation,
+                buildRequestOrgRepaymentFileBaseName(claim.getReferenceNumber()));
+            eventProducer.createRejectOrganisationPaymentPlanEvent(updatedClaim);
             caseEvent = REJECT_ORGANISATION_PAYMENT_PLAN;
         } else {
-            eventProducer.createInterlocutoryJudgmentEvent(claim);
+            updatedClaim = uploadClaimantResponseToDocumentStore(claim, authorisation,
+                buildRequestForInterlocutoryJudgmentFileBaseName(claim.getReferenceNumber()));
+            eventProducer.createInterlocutoryJudgmentEvent(updatedClaim);
             caseEvent = INTERLOCUTORY_JUDGMENT;
         }
-        caseRepository.saveCaseEvent(authorisation, claim, caseEvent);
+
+        caseRepository.saveCaseEvent(authorisation, updatedClaim, caseEvent);
     }
 
     private void formaliseSettlement(Claim claim, ResponseAcceptation responseAcceptation, String authorisation) {
         Settlement settlement = new Settlement();
-        Response response = claim.getResponse().orElseThrow(IllegalStateException::new);
+        Response response = claim.getResponse()
+            .orElseThrow(() -> new IllegalStateException(MISSING_RESPONSE));
         PaymentIntention paymentIntention = acceptedPaymentIntention(responseAcceptation, response);
         BigDecimal claimAmountTillDate = claim.getTotalAmountTillToday().orElse(BigDecimal.ZERO);
         switch (getDecisionType(responseAcceptation)) {
@@ -122,7 +152,8 @@ public class FormaliseResponseAcceptanceService {
         switch (paymentIntention.getPaymentOption()) {
             case IMMEDIATELY:
             case BY_SPECIFIED_DATE:
-                LocalDate completionDate = paymentIntention.getPaymentDate().orElseThrow(IllegalStateException::new);
+                LocalDate completionDate = paymentIntention.getPaymentDate()
+                    .orElseThrow(() -> new IllegalStateException(MISSING_PAYMENT_DATE));
                 builder.completionDate(completionDate);
                 builder.content(
                     prepareOfferContentsBySetDate(response, completionDate, claimAmountTillDate)
@@ -176,7 +207,8 @@ public class FormaliseResponseAcceptanceService {
     }
 
     private void formaliseCCJ(Claim claim, ResponseAcceptation responseAcceptation, String authorisation) {
-        Response response = claim.getResponse().orElseThrow(IllegalStateException::new);
+        Response response = claim.getResponse()
+            .orElseThrow(() -> new IllegalStateException(MISSING_RESPONSE));
         PaymentIntention acceptedPaymentIntention = acceptedPaymentIntention(responseAcceptation, response);
 
         CountyCourtJudgment.CountyCourtJudgmentBuilder countyCourtJudgment = CountyCourtJudgment.builder()
@@ -216,11 +248,21 @@ public class FormaliseResponseAcceptanceService {
     private PaymentIntention getDefendantPaymentIntention(Response response) {
         switch (response.getResponseType()) {
             case PART_ADMISSION:
-                return ((PartAdmissionResponse) response).getPaymentIntention().orElseThrow(IllegalStateException::new);
+                return ((PartAdmissionResponse) response).getPaymentIntention()
+                    .orElseThrow(() -> new IllegalStateException(MISSING_PAYMENT_INTENTION));
             case FULL_ADMISSION:
                 return ((FullAdmissionResponse) response).getPaymentIntention();
             default:
                 throw new IllegalStateException("Invalid response type " + response.getResponseType());
         }
+    }
+
+    private Claim uploadClaimantResponseToDocumentStore(Claim claim, String authorisation, String filename) {
+        if (!ctscEnabled) {
+            return claim;
+        }
+
+        PDF document = claimantResponseReceiptService.createPdf(claim, filename);
+        return documentService.uploadToDocumentManagement(document, authorisation, claim);
     }
 }

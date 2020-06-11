@@ -9,8 +9,7 @@ import lombok.Getter;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import uk.gov.hmcts.cmc.domain.amount.TotalAmountCalculator;
 import uk.gov.hmcts.cmc.domain.constraints.DateNotInTheFuture;
-import uk.gov.hmcts.cmc.domain.models.bulkprint.BulkPrintCollection;
-import uk.gov.hmcts.cmc.domain.models.bulkprint.BulkPrintLetterType;
+import uk.gov.hmcts.cmc.domain.models.bulkprint.BulkPrintDetails;
 import uk.gov.hmcts.cmc.domain.models.claimantresponse.ClaimantResponse;
 import uk.gov.hmcts.cmc.domain.models.offers.Settlement;
 import uk.gov.hmcts.cmc.domain.models.orders.DirectionOrder;
@@ -29,7 +28,8 @@ import static uk.gov.hmcts.cmc.domain.utils.ToStringStyle.ourStyle;
 @JsonIgnoreProperties(
     value = {"totalClaimAmount", "totalAmountTillToday", "totalAmountTillDateOfIssue",
         "amountWithInterestUntilIssueDate", "totalInterestTillDateOfIssue", "totalInterest",
-        "serviceDate", "amountWithInterest", "directionsQuestionnaireDeadline", "claimSubmissionOperationIndicators"},
+        "serviceDate", "amountWithInterest", "directionsQuestionnaireDeadline", "claimSubmissionOperationIndicators",
+        "proceedOfflineOtherReasonDescription"},
     allowGetters = true
 )
 @Getter
@@ -80,7 +80,9 @@ public class Claim {
     private final YesNoOption paperResponse;
     private final LocalDateTime dateReferredForDirections;
     private final String preferredDQCourt;
-    private final BulkPrintCollection bulkPrintCollection;
+    private final ProceedOfflineReasonType proceedOfflineReason;
+    private final String proceedOfflineOtherReasonDescription;
+    private final List<BulkPrintDetails> bulkPrintCollection;
 
     @SuppressWarnings("squid:S00107") // Not sure there's a lot fo be done about removing parameters here
     @Builder(toBuilder = true)
@@ -127,7 +129,9 @@ public class Claim {
         YesNoOption paperResponse,
         LocalDateTime dateReferredForDirections,
         String preferredDQCourt,
-        BulkPrintCollection bulkPrintCollection
+        ProceedOfflineReasonType proceedOfflineReason,
+        String proceedOfflineOtherReasonDescription,
+        List<BulkPrintDetails> bulkPrintCollection
     ) {
         this.id = id;
         this.submitterId = submitterId;
@@ -171,6 +175,8 @@ public class Claim {
         this.paperResponse = paperResponse;
         this.dateReferredForDirections = dateReferredForDirections;
         this.preferredDQCourt = preferredDQCourt;
+        this.proceedOfflineReason = proceedOfflineReason;
+        this.proceedOfflineOtherReasonDescription = proceedOfflineOtherReasonDescription;
         this.bulkPrintCollection = bulkPrintCollection;
     }
 
@@ -283,8 +289,12 @@ public class Claim {
         return Optional.ofNullable(preferredDQCourt);
     }
 
-    public Optional<BulkPrintCollection> getBulkPrintCollection() {
-        return Optional.ofNullable(bulkPrintCollection);
+    public Optional<ProceedOfflineReasonType> getProceedOfflineReason() {
+        return Optional.ofNullable(proceedOfflineReason);
+    }
+
+    public List<BulkPrintDetails> getBulkPrintCollection() {
+        return bulkPrintCollection;
     }
 
     @Override

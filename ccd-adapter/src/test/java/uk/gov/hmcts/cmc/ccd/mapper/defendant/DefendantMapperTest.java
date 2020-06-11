@@ -45,12 +45,12 @@ public class DefendantMapperTest {
     @Autowired
     private DefendantMapper mapper;
 
+    private final LocalDateTime mediationSettledTime = LocalDateTime.of(2019, 11, 13, 8, 20, 30);
+
     @Test(expected = NullPointerException.class)
     public void mapToShouldThrowExceptionWhenTheirDetailsIsNull() {
         mapper.to(null, SampleClaim.getDefault());
     }
-
-    private final LocalDateTime mediationSettledTime = LocalDateTime.of(2019, 11, 13, 8, 20, 30);
 
     @Test(expected = NullPointerException.class)
     public void mapToShouldThrowExceptionWhenClaimIsNull() {
@@ -266,7 +266,8 @@ public class DefendantMapperTest {
 
         //Then
         assertTrue(claim.getMoneyReceivedOn().isPresent());
-        assertEquals(ccdRespondent.getPaidInFullDate(), claim.getMoneyReceivedOn().orElseThrow(AssertionError::new));
+        assertEquals(ccdRespondent.getPaidInFullDate(), claim.getMoneyReceivedOn()
+            .orElseThrow(() -> new AssertionError("Missing money received date")));
     }
 
     @Test
@@ -387,7 +388,7 @@ public class DefendantMapperTest {
 
         // Then
         assertEquals(mediationSettledTime, finalClaim.getMediationSettlementReachedAt()
-            .orElseThrow(IllegalStateException::new));
+            .orElseThrow(() -> new AssertionError("Expected mediation settled time but got null")));
 
     }
 }

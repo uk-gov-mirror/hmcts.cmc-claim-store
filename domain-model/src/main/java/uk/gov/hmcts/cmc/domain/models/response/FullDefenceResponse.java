@@ -38,7 +38,7 @@ public class FullDefenceResponse extends Response {
     @Valid
     private final DirectionsQuestionnaire directionsQuestionnaire;
 
-    @Builder
+    @Builder(toBuilder = true)
     public FullDefenceResponse(
         YesNoOption freeMediation,
         String mediationPhoneNumber,
@@ -51,7 +51,8 @@ public class FullDefenceResponse extends Response {
         PaymentDeclaration paymentDeclaration,
         DefendantTimeline timeline,
         DefendantEvidence evidence,
-        DirectionsQuestionnaire directionsQuestionnaire
+        DirectionsQuestionnaire directionsQuestionnaire,
+        ResponseMethod responseMethod
     ) {
         super(
             FULL_DEFENCE,
@@ -60,7 +61,8 @@ public class FullDefenceResponse extends Response {
             mediationContactPerson,
             moreTimeNeeded,
             defendant,
-            statementOfTruth
+            statementOfTruth,
+            responseMethod
         );
         this.defenceType = defenceType;
         this.defence = defence;

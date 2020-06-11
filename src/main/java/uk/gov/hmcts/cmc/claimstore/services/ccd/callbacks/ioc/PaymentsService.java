@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.cmc.domain.models.Claim;
+import uk.gov.hmcts.cmc.domain.models.ClaimData;
 import uk.gov.hmcts.cmc.domain.models.Payment;
 import uk.gov.hmcts.cmc.domain.models.PaymentStatus;
 import uk.gov.hmcts.reform.fees.client.FeesClient;
@@ -16,9 +17,9 @@ import uk.gov.hmcts.reform.payments.client.models.FeeDto;
 import uk.gov.hmcts.reform.payments.client.models.PaymentDto;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Optional;
-
-import static java.lang.String.format;
+import java.util.stream.Collectors;
 
 @Service
 @Conditional(FeesAndPaymentsConfiguration.class)
@@ -33,12 +34,10 @@ public class PaymentsService {
     private final String siteId;
     private final String currency;
     private final String description;
-    private final String returnUrlPattern;
 
     public PaymentsService(
         PaymentsClient paymentsClient,
         FeesClient feesClient,
-        @Value("${payments.returnUrlPattern}") String returnUrlPattern,
         @Value("${payments.api.service}") String service,
         @Value("${payments.api.siteId}") String siteId,
         @Value("${payments.api.currency}") String currency,
@@ -46,26 +45,27 @@ public class PaymentsService {
     ) {
         this.paymentsClient = paymentsClient;
         this.feesClient = feesClient;
-        this.returnUrlPattern = returnUrlPattern;
         this.service = service;
         this.siteId = siteId;
         this.currency = currency;
         this.description = description;
     }
 
-    public Payment retrievePayment(
+    public Optional<Payment> retrievePayment(
         String authorisation,
-        Claim claim
+        ClaimData claimData
     ) {
 
-        logger.info("Retrieving payment amount for claim with external id {}",
-            claim.getExternalId());
+        Optional<Payment> payment = claimData.getPayment();
+        if (!payment.isPresent()) {
+            return Optional.empty();
+        }
 
-        Payment claimPayment = claim.getClaimData().getPayment().orElseThrow(IllegalStateException::new);
+        Payment claimPayment = payment.get();
+        logger.info("Retrieving payment with reference {}", claimPayment.getReference());
 
-        return from(paymentsClient.retrievePayment(authorisation, claimPayment.getReference()),
-            claimPayment.getNextUrl()
-        );
+        PaymentDto paymentDto = paymentsClient.retrievePayment(authorisation, claimPayment.getReference());
+        return Optional.of(from(paymentDto, claimPayment));
     }
 
     public Payment createPayment(
@@ -73,10 +73,10 @@ public class PaymentsService {
         Claim claim
     ) {
 
-        logger.info("Calculating interest amount for claim with external id {}",
-            claim.getExternalId());
+        logger.info("Calculating interest amount for claim with external id {}", claim.getExternalId());
 
-        BigDecimal amount = claim.getTotalClaimAmount().orElseThrow(IllegalStateException::new);
+        BigDecimal amount = claim.getTotalClaimAmount()
+            .orElseThrow(() -> new IllegalStateException("Missing total claim amount"));
         BigDecimal interest = claim.getTotalInterest().orElse(BigDecimal.ZERO);
 
         BigDecimal amountPlusInterest = amount.add(interest);
@@ -95,19 +95,26 @@ public class PaymentsService {
 
         logger.info("Creating payment in pay hub for claim with external id {}",
             claim.getExternalId());
-        logger.info("Next URL: {}", format(returnUrlPattern, claim.getExternalId()));
+        Payment claimPayment = claim.getClaimData().getPayment().orElseThrow(IllegalStateException::new);
+        logger.info("Return URL: {}", claimPayment.getReturnUrl());
         PaymentDto payment = paymentsClient.createPayment(
             authorisation,
             paymentRequest,
-            format(returnUrlPattern, claim.getExternalId())
+            claimPayment.getReturnUrl()
         );
+        logger.info("Created payment for claim with external id {}: {}", claim.getExternalId(), payment);
 
         payment.setAmount(feeOutcome.getFeeAmount());
-        return from(payment, null);
+        return from(payment, claimPayment);
+    }
+
+    public void cancelPayment(String authorisation, String paymentReference) {
+        logger.info("Cancelling payment {}", paymentReference);
+        paymentsClient.cancelPayment(authorisation, paymentReference);
     }
 
     private FeeDto[] buildFees(String ccdCaseId, FeeLookupResponseDto feeOutcome) {
-        return new FeeDto[]{
+        return new FeeDto[] {
             FeeDto.builder()
                 .ccdCaseNumber(ccdCaseId)
                 .calculatedAmount(feeOutcome.getFeeAmount())
@@ -135,19 +142,32 @@ public class PaymentsService {
             .build();
     }
 
-    private Payment from(PaymentDto paymentDto, String nextUrlCurrent) {
+    private Payment from(PaymentDto paymentDto, Payment claimPayment) {
         String dateCreated = Optional.ofNullable(paymentDto.getDateCreated())
             .map(date -> date.toLocalDate().toString())
-            .orElse(null);
+            .orElse(claimPayment.getDateCreated());
+
         String nextUrl = Optional.ofNullable(paymentDto.getLinks().getNextUrl())
             .map(url -> url.getHref().toString())
-            .orElse(nextUrlCurrent);
+            .orElse(claimPayment.getNextUrl());
+
+        String feeId = null;
+        if (paymentDto.getFees() != null) {
+            feeId = Arrays.stream(paymentDto.getFees())
+                .map(FeeDto::getId)
+                .map(Object::toString)
+                .collect(Collectors.joining(", "));
+        }
+
         return Payment.builder()
             .amount(paymentDto.getAmount())
             .reference(paymentDto.getReference())
             .status(PaymentStatus.fromValue(paymentDto.getStatus()))
             .dateCreated(dateCreated)
             .nextUrl(nextUrl)
+            .returnUrl(claimPayment.getReturnUrl())
+            .transactionId(paymentDto.getExternalReference())
+            .feeId(feeId)
             .build();
     }
 }

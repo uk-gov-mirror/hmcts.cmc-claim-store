@@ -18,6 +18,7 @@ import java.net.URI;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.hmcts.cmc.ccd.domain.CCDClaimDocumentType.PAPER_RESPONSE_DISPUTES_ALL;
 
 public class ClaimDocumentCollectionMapperTest {
 
@@ -26,7 +27,7 @@ public class ClaimDocumentCollectionMapperTest {
         new ScannedDocumentMapper());
 
     @Test
-    public void shouldFilterOutPinAndCCJDocuments() {
+    public void shouldFilterOutPinDocuments() {
 
         CCDCase.CCDCaseBuilder builder = CCDCase.builder();
         ClaimDocumentCollection collection = new ClaimDocumentCollection();
@@ -35,6 +36,12 @@ public class ClaimDocumentCollectionMapperTest {
             .documentManagementUrl(URI.create("someurl"))
             .documentManagementBinaryUrl(URI.create("someBinaryUrl"))
             .documentType(ClaimDocumentType.CCJ_REQUEST)
+            .build());
+
+        collection.addClaimDocument(ClaimDocument.builder()
+            .documentManagementUrl(URI.create("someurl"))
+            .documentManagementBinaryUrl(URI.create("someBinaryUrl"))
+            .documentType(ClaimDocumentType.DEFENDANT_PIN_LETTER)
             .build());
 
         collection.addClaimDocument(ClaimDocument.builder()
@@ -59,7 +66,7 @@ public class ClaimDocumentCollectionMapperTest {
 
         CCDCase build = builder.build();
         List<CCDCollectionElement<CCDClaimDocument>> caseDocuments = build.getCaseDocuments();
-        assertThat(caseDocuments.size()).isEqualTo(3);
+        assertThat(caseDocuments.size()).isEqualTo(4);
     }
 
     @Test
@@ -120,7 +127,7 @@ public class ClaimDocumentCollectionMapperTest {
 
         Claim build = builder.build();
         ClaimDocumentCollection caseDocuments = build.getClaimDocumentCollection()
-            .orElseThrow(IllegalStateException::new);
+            .orElseThrow(() -> new IllegalStateException("Missing claim document collection"));
         Assert.notNull(caseDocuments.getScannedDocuments(), "Staff Uploaded document list cant be null");
         assertThat(caseDocuments.getScannedDocuments().size()).isEqualTo(1);
 
@@ -128,14 +135,14 @@ public class ClaimDocumentCollectionMapperTest {
 
     @Test
     public void shouldMapFromStaffUploadedDocuments() {
-        CCDCase ccdCase = SampleData.withPaperResponseFromStaffUploadedDoc();
+        CCDCase ccdCase = SampleData.withStaffUploadedDoc(PAPER_RESPONSE_DISPUTES_ALL);
         Claim.ClaimBuilder builder = Claim.builder();
 
         mapper.from(ccdCase, builder);
 
         Claim build = builder.build();
         ClaimDocumentCollection caseDocuments = build.getClaimDocumentCollection()
-            .orElseThrow(IllegalStateException::new);
+            .orElseThrow(() -> new IllegalStateException("Missing claim document collection"));
         Assert.notNull(caseDocuments.getStaffUploadedDocuments(), "Scanned document list cant be null");
         assertThat(caseDocuments.getStaffUploadedDocuments().size()).isEqualTo(1);
     }
