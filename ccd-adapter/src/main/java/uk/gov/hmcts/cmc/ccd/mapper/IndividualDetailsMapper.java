@@ -29,6 +29,8 @@ public class IndividualDetailsMapper {
     public void to(IndividualDetails individual,
                    CCDRespondent.CCDRespondentBuilder builder) {
 
+        System.out.println("IndividualDetailsMapper Method to *** "+individual.getPcqId());
+
         CCDParty.CCDPartyBuilder claimantProvidedDetails = CCDParty.builder().type(CCDPartyType.INDIVIDUAL);
         claimantProvidedDetails.firstName(individual.getFirstName());
         claimantProvidedDetails.lastName(individual.getLastName());
@@ -48,15 +50,19 @@ public class IndividualDetailsMapper {
 
         builder
             .claimantProvidedPartyName(individual.getName())
+            .pcqId(individual.getPcqId())
             .claimantProvidedDetail(claimantProvidedDetails.build());
     }
 
     public IndividualDetails from(CCDCollectionElement<CCDRespondent> ccdRespondent) {
+        System.out.println("D IndividualDetailsMapper from "+ccdRespondent.getValue().getPcqId());
+
         CCDRespondent respondent = ccdRespondent.getValue();
         CCDParty claimantProvidedPartyDetail = respondent.getClaimantProvidedDetail();
 
         return IndividualDetails.builder()
             .id(ccdRespondent.getId())
+            .pcqId(respondent.getPcqId())
             .name(respondent.getClaimantProvidedPartyName())
             .firstName(respondent.getClaimantProvidedDetail().getFirstName())
             .lastName(respondent.getClaimantProvidedDetail().getLastName())

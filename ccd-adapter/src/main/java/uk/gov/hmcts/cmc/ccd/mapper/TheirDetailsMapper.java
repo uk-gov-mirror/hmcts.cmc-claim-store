@@ -35,6 +35,7 @@ public class TheirDetailsMapper {
 
     public void to(CCDRespondent.CCDRespondentBuilder builder, TheirDetails theirDetails) {
 
+        System.out.println("theirDetails  to ***"+theirDetails.getPcqId());
         if (theirDetails instanceof IndividualDetails) {
             IndividualDetails individual = (IndividualDetails) theirDetails;
             individualDetailsMapper.to(individual, builder);
@@ -51,6 +52,8 @@ public class TheirDetailsMapper {
     }
 
     public TheirDetails from(CCDCollectionElement<CCDRespondent> ccdRespondent) {
+        System.out.println("theirDetails from ***"+ccdRespondent.getValue().getPcqId());
+
         switch (ccdRespondent.getValue().getClaimantProvidedDetail().getType()) {
             case COMPANY:
                 return companyDetailsMapper.from(ccdRespondent);

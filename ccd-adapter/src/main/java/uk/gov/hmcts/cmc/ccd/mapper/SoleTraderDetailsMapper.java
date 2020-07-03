@@ -40,6 +40,7 @@ public class SoleTraderDetailsMapper {
 
         builder
             .claimantProvidedPartyName(soleTrader.getName())
+            .pcqId(soleTrader.getPcqId())
             .claimantProvidedDetail(claimantProvidedPartyDetail.build());
     }
 
@@ -57,6 +58,7 @@ public class SoleTraderDetailsMapper {
             .title(claimantProvidedPartyDetails.getTitle())
             .businessName(claimantProvidedPartyDetails.getBusinessName())
             .serviceAddress(addressMapper.from(claimantProvidedPartyDetails.getCorrespondenceAddress()))
+            .pcqId(respondent.getPcqId())
             .build();
     }
 }

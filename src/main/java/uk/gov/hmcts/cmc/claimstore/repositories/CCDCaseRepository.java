@@ -120,6 +120,7 @@ public class CCDCaseRepository implements CaseRepository {
         LocalDate claimantResponseDeadline,
         String authorization
     ) {
+        System.out.println("CCDCaseRepository  ***"+response.getDefendant().getPcqId());
         coreCaseDataService.saveDefendantResponse(claim.getId(), defendantEmail, response, authorization);
     }
 

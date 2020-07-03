@@ -375,8 +375,9 @@ public class CoreCaseDataServiceTest {
         Claim providedClaim = SampleClaim.getDefault();
         Response providedResponse = SampleResponse.validDefaults();
 
-        when(caseDetailsConverter.extractClaim(any(CaseDetails.class)))
-            .thenReturn(SampleClaim.getWithResponse(providedResponse));
+        System.out.println("providedResponse "+providedResponse.toString());
+//        when(caseDetailsConverter.extractClaim(any(CaseDetails.class)))
+//            .thenReturn(SampleClaim.getWithResponse(providedResponse));
 
         CaseDetails caseDetails = service.saveDefendantResponse(providedClaim.getId(),
             "defendant@email.com",

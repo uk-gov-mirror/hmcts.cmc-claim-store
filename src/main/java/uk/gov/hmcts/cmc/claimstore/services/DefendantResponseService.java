@@ -59,6 +59,7 @@ public class DefendantResponseService {
         String authorization
     ) {
         Claim claim = claimService.getClaimByExternalId(externalId, authorization);
+        System.out.println("DefendantResponseService  ***"+response.getDefendant().getPcqId()+"  claim pcqid ***"+claim.getClaimData().getDefendant().getPcqId());
 
         String referenceNumber = claim.getReferenceNumber();
         if (!isClaimLinkedWithDefendant(claim, defendantId)) {

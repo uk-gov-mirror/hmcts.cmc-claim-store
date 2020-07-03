@@ -62,6 +62,7 @@ public class ClaimMapper {
 
     public void to(Claim claim, CCDCase.CCDCaseBuilder builder) {
         ClaimData claimData = claim.getClaimData();
+        System.out.println("ClaimMapper  to "+ claimData.getDefendant().getPcqId());
         Objects.requireNonNull(claimData, "claimData must not be null");
 
         claimData.getFeeCode().ifPresent(builder::feeCode);
@@ -78,6 +79,8 @@ public class ClaimMapper {
             .ifPresent(housingDisrepair -> housingDisrepairMapper.to(housingDisrepair, builder));
 
         AtomicInteger applicantIndex = new AtomicInteger(0);
+        System.out.println("C ClaimMapper  to  claimData "+claimData.getClaimant().getPcqId());
+        System.out.println("D ClaimMapper  to  claimData "+claimData.getDefendant().getPcqId());
         builder.applicants(claimData.getClaimants().stream()
             .map(claimant -> claimantMapper.to(
                 claimant,
@@ -141,6 +144,8 @@ public class ClaimMapper {
     }
 
     private List<TheirDetails> getDefendants(CCDCase ccdCase, Claim.ClaimBuilder claimBuilder) {
+        System.out.println("D ClaimMapper  getDefendants  ccdCase "+ccdCase.getRespondents().get(0).getValue().getPcqId());
+        System.out.println("C ClaimMapper  getDefendants  ccdCase "+ccdCase.getApplicants().get(0).getValue().getPcqId());
 
         return asStream(ccdCase.getRespondents())
             .filter(respondent -> respondent.getValue() != null)

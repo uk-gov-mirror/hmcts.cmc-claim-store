@@ -19,6 +19,7 @@ public class CompanyDetails extends TheirDetails implements HasContactPerson {
     @Builder
     public CompanyDetails(
         String id,
+        String pcqId,
         String name,
         Address address,
         String email,
@@ -27,7 +28,7 @@ public class CompanyDetails extends TheirDetails implements HasContactPerson {
         String contactPerson,
         String phoneNumber
     ) {
-        super(id, name, address, email, representative, serviceAddress, phoneNumber);
+        super(id, pcqId, name, address, email, representative, serviceAddress, phoneNumber);
         this.contactPerson = contactPerson;
     }
 

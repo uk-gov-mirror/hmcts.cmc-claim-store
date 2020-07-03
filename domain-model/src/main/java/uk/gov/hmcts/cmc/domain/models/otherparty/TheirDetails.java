@@ -52,8 +52,11 @@ public abstract class TheirDetails extends CollectionId implements NamedParty {
     @Size(max = 30, message = "may not be longer than {max} characters")
     private final String phone;
 
+    private  String pcqId;
+
     public TheirDetails(
         String id,
+        String pcqId,
         String name,
         Address address,
         String email,
@@ -62,6 +65,7 @@ public abstract class TheirDetails extends CollectionId implements NamedParty {
         String phone
     ) {
         super(id);
+        this.pcqId = pcqId;
         this.name = name;
         this.address = address;
         this.email = email;
@@ -98,6 +102,10 @@ public abstract class TheirDetails extends CollectionId implements NamedParty {
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ourStyle());
+    }
+
+    public String getPcqId() {
+        return pcqId;
     }
 
 }

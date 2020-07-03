@@ -48,8 +48,10 @@ public class CaseMapperTest {
         Claim claim = SampleClaim.getLegalDataWithReps()
             .toBuilder().state(null).build();
 
+        System.out.println(claim.getClaimData().getDefendant().getPcqId());
         //when
         CCDCase ccdCase = ccdCaseMapper.to(claim);
+        System.out.println(ccdCase.getRespondents().get(0).getValue().getPcqId());
 
         //then
         assertThat(claim).isEqualTo(ccdCase);

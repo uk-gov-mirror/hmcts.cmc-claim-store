@@ -346,6 +346,8 @@ public class ClaimService {
         Response response,
         String authorization
     ) {
+        System.out.println("ClaimService  ***"+response.getDefendant().getPcqId() +"claim  pcqid"+claim.getClaimData().getDefendant().getPcqId());
+
         claimAuthorisationRule.assertClaimCanBeAccessed(claim, authorization);
         LocalDate claimantResponseDeadline =
             responseDeadlineCalculator.calculateClaimantResponseDeadline(LocalDate.now());

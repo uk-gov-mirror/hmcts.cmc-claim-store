@@ -40,6 +40,7 @@ public class CompanyDetailsMapper {
 
         builder
             .claimantProvidedPartyName(company.getName())
+            .pcqId(company.getPcqId())
             .claimantProvidedDetail(claimantProvidedPartyDetail.build());
 
     }
@@ -56,6 +57,7 @@ public class CompanyDetailsMapper {
             .representative(representativeMapper.from(ccdRespondent))
             .serviceAddress(addressMapper.from(claimantProvidedPartyDetail.getCorrespondenceAddress()))
             .contactPerson(claimantProvidedPartyDetail.getContactPerson())
+            .pcqId(ccdRespondent.getPcqId())
             .build();
     }
 }

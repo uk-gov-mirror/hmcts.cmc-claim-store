@@ -104,6 +104,7 @@ public class ResponseMapper {
                 builder.responseDefendantSOTSignerRole(statementOfTruth.getSignerRole());
             }
         );
+        System.out.println("ResponseMapper to  PCQID "+response.getDefendant().getPcqId());
         defendantPartyMapper.to(builder, response.getDefendant(), partyDetail);
 
         switch (response.getResponseType()) {
@@ -128,6 +129,7 @@ public class ResponseMapper {
         if (respondent.getResponseType() == null) {
             return;
         }
+        System.out.println("ResponseMapper from  PCQID "+respondentElement.getValue().getPcqId());
 
         switch (respondent.getResponseType()) {
             case FULL_DEFENCE:

@@ -16,6 +16,7 @@ import uk.gov.hmcts.cmc.claimstore.exceptions.ConflictException;
 import uk.gov.hmcts.cmc.claimstore.exceptions.CoreCaseDataStoreException;
 import uk.gov.hmcts.cmc.claimstore.idam.models.User;
 import uk.gov.hmcts.cmc.claimstore.idam.models.UserDetails;
+import uk.gov.hmcts.cmc.claimstore.processors.JsonMapper;
 import uk.gov.hmcts.cmc.claimstore.services.DirectionsQuestionnaireService;
 import uk.gov.hmcts.cmc.claimstore.services.JobSchedulerService;
 import uk.gov.hmcts.cmc.claimstore.services.ReferenceNumberService;
@@ -100,6 +101,10 @@ public class CoreCaseDataService {
     private final WorkingDayIndicator workingDayIndicator;
     private final int intentionToProceedDeadlineDays;
     private final DirectionsQuestionnaireService directionsQuestionnaireService;
+
+    @Autowired
+    protected JsonMapper jsonMapper;
+
 
     @SuppressWarnings("squid:S00107") // All parameters are required here
     @Autowired
@@ -423,7 +428,9 @@ public class CoreCaseDataService {
         Response response,
         String authorisation
     ) {
+        System.out.println("CoreCaseDataService  ***"+response.getDefendant().getPcqId());
         CaseEvent caseEvent = CaseEvent.valueOf(getResponseTypeName(response));
+
 
         try {
             UserDetails userDetails = userService.getUserDetails(authorisation);
@@ -441,12 +448,31 @@ public class CoreCaseDataService {
             LocalDate intentionToProceedDeadline = new StateTransitionCalculator(workingDayIndicator,
                 intentionToProceedDeadlineDays).calculateDeadlineFromDate(respondedAt.toLocalDate());
 
+           // System.out.println(" coreCaseDataService  Name  from response  "+ response.getDefendant().getPhone());
+            //System.out.println(" coreCaseDataService  updatedClaim "+ response.getDefendant().getPcqId());
+
+            System.out.println(" coreCaseDataService  Response in String  "+ response.toString());
+
+
+           // System.out.println(" coreCaseDataService    EventId"+startEventResponse.getEventId() +" coreCaseDataService    CaseDetails "+startEventResponse.getCaseDetails());
+            System.out.println("coreCaseDataService    CaseDetails"+startEventResponse.getCaseDetails().getData());
             Claim updatedClaim = toClaimBuilder(startEventResponse)
                 .response(response)
                 .defendantEmail(defendantEmail)
                 .respondedAt(respondedAt)
                 .intentionToProceedDeadline(intentionToProceedDeadline)
                 .build();
+
+            System.out.println(" coreCaseDataService    EventId"+updatedClaim.getResponse().get().getDefendant());
+
+
+            System.out.println("  ");
+            System.out.println(" coreCaseDataService  updatedClaim  pcqid "+ updatedClaim.getClaimData().getDefendant().getPcqId());
+
+            System.out.println(" coreCaseDataService  updatedClaim "+ updatedClaim.getClaimData().getDefendant().getPcqId());
+            System.out.println(" coreCaseDataService  phone "+ updatedClaim.getClaimData().getDefendant().getPhone());
+
+            System.out.println(" coreCaseDataService  phone "+ updatedClaim.getClaimData().getDefendant().getPhone());
 
             CaseDataContent caseDataContent = caseDataContent(startEventResponse, updatedClaim);
 

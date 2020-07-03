@@ -45,6 +45,9 @@ public class DefendantPartyMapper {
         requireNonNull(party, "party must not be null");
 
         builder.partyName(party.getName());
+        builder.pcqId(party.getPcqId());
+        System.out.println(" respondent   :: to "+party.getPcqId());
+
         defendantDetail.primaryAddress(addressMapper.to(party.getAddress()));
         party.getCorrespondenceAddress().ifPresent(
             address -> defendantDetail.correspondenceAddress(addressMapper.to(address))
@@ -102,7 +105,7 @@ public class DefendantPartyMapper {
         CCDRespondent respondent = respondentElement.getValue();
         requireNonNull(respondent, "respondent must not be null");
         requireNonNull(respondent.getPartyDetail(), "respondent.getPartyDetail() must not be null");
-
+        System.out.println(" DefendantPartyMapper frok PCQID  "+respondentElement.getValue().getPcqId());
         switch (respondent.getPartyDetail().getType()) {
             case INDIVIDUAL:
                 return extractIndividual(respondentElement);
@@ -168,6 +171,7 @@ public class DefendantPartyMapper {
         CCDRespondent respondent = respondentElement.getValue();
         CCDParty partyDetail = respondent.getPartyDetail();
 
+        System.out.println("D  DefendentPartyMapper extractIndividual "+respondent.getPcqId());
         return Individual.builder()
             .id(respondentElement.getId())
             .name(respondent.getPartyName())
@@ -176,6 +180,7 @@ public class DefendantPartyMapper {
             .phone(telephoneMapper.from(partyDetail.getTelephoneNumber()))
             .dateOfBirth(partyDetail.getDateOfBirth())
             .representative(extractRepresentative(respondent))
+            .pcqId(respondent.getPcqId())
             .build();
     }
 

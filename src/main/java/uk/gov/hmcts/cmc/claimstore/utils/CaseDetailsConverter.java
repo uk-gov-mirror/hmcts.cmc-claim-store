@@ -1,5 +1,8 @@
 package uk.gov.hmcts.cmc.claimstore.utils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.cmc.ccd.domain.CCDCase;
@@ -46,6 +49,13 @@ public class CaseDetailsConverter {
     }
 
     public Claim extractClaim(CaseDetails caseDetails) {
+
+
+//        List<String> result2 = new ArrayList(caseDetails.getData().);
+//        jsonMapper.fromMap(caseDetails.getData(),CCDCase.class);
+        System.out.println("caseDetails  Data Values 123  "+caseDetails.getData().toString());
+
+
         CCDCase ccdCase = extractCCDCase(caseDetails);
         Claim claim = caseMapper.from(ccdCase);
 
@@ -85,7 +95,6 @@ public class CaseDetailsConverter {
         Map<String, Object> tempData = new HashMap<>(caseDetails.getData());
         tempData.put("id", caseDetails.getId());
         tempData.put("state", caseDetails.getState());
-
         return extractCCDCase(tempData);
     }
 

@@ -54,6 +54,9 @@ public class CaseMapper {
     public CCDCase to(Claim claim) {
         final CCDCase.CCDCaseBuilder builder = CCDCase.builder();
 
+        System.out.println("C CaseMapper to  claim "+claim.getClaimData().getClaimant().getPcqId());
+
+        System.out.println("D CaseMapper to  claim "+claim.getClaimData().getDefendant().getPcqId());
         claimMapper.to(claim, builder);
 
         claim.getClaimDocumentCollection()
@@ -99,6 +102,9 @@ public class CaseMapper {
     }
 
     public Claim from(CCDCase ccdCase) {
+        System.out.println("D CaseMapper from ccdCase "+ccdCase.getRespondents().get(0).getValue().getPcqId());
+        System.out.println("C CaseMapper from ccdCase "+ccdCase.getApplicants().get(0).getValue().getPcqId());
+
         Claim.ClaimBuilder builder = Claim.builder();
         claimMapper.from(ccdCase, builder);
 

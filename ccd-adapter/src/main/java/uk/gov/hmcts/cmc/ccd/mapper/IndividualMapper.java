@@ -27,6 +27,7 @@ public class IndividualMapper {
 
     public void to(Individual individual, CCDApplicant.CCDApplicantBuilder builder,
                    CCDParty.CCDPartyBuilder applicantPartyDetail) {
+        System.out.println("Individual  Mapper to  PCQID  "+individual.getPcqId());
         applicantPartyDetail.type(CCDPartyType.INDIVIDUAL);
         individual.getPhone()
             .ifPresent(telephoneNo -> applicantPartyDetail.telephoneNumber(telephoneMapper.to(telephoneNo)));
@@ -49,6 +50,8 @@ public class IndividualMapper {
     public Individual from(CCDCollectionElement<CCDApplicant> individual) {
         CCDApplicant applicant = individual.getValue();
         CCDParty partyDetails = applicant.getPartyDetail();
+        System.out.println("CA IndividualMapper from  PCQID  "+applicant.getPcqId());
+
         return Individual.builder()
             .id(individual.getId())
             .name(applicant.getPartyName())

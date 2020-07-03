@@ -36,6 +36,7 @@ public class IndividualDetails extends TheirDetails implements TitledParty, Spli
     @Builder
     public IndividualDetails(
         String id,
+        String pcqId,
         String name,
         String title,
         String firstName,
@@ -47,7 +48,7 @@ public class IndividualDetails extends TheirDetails implements TitledParty, Spli
         LocalDate dateOfBirth,
         String phoneNumber
     ) {
-        super(id, name, address, email, representative, serviceAddress, phoneNumber);
+        super(id, pcqId, name, address, email, representative, serviceAddress, phoneNumber);
         this.dateOfBirth = dateOfBirth;
         this.title = title;
         this.firstName = firstName;

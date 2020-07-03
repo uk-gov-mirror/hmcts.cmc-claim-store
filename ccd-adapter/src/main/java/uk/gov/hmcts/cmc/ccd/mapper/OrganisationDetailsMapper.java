@@ -41,6 +41,7 @@ public class OrganisationDetailsMapper {
         claimantProvidedPartyDetail.primaryAddress(addressMapper.to(organisation.getAddress()));
         builder
             .claimantProvidedPartyName(organisation.getName())
+            .pcqId(organisation.getPcqId())
             .claimantProvidedDetail(claimantProvidedPartyDetail.build());
     }
 
@@ -57,6 +58,7 @@ public class OrganisationDetailsMapper {
             .serviceAddress(addressMapper.from(claimantProvidedDetails.getCorrespondenceAddress()))
             .contactPerson(claimantProvidedDetails.getContactPerson())
             .companiesHouseNumber(claimantProvidedDetails.getCompaniesHouseNumber())
+            .pcqId(respondent.getPcqId())
             .build();
     }
 }

@@ -77,6 +77,7 @@ public class DefendantMapper {
         respondentBuilder.partyDetail(partyDetail.build());
         claim.getResponse().ifPresent(toResponse(respondentBuilder, partyDetail));
 
+        System.out.println("DefendantMapper to *** "+ theirDetails.getPcqId());
         theirDetailsMapper.to(respondentBuilder, theirDetails);
 
         respondentBuilder.claimantResponse(claimantResponseMapper.to(claim));
@@ -94,6 +95,8 @@ public class DefendantMapper {
 
         CCDRespondent ccdRespondent = respondentElement.getValue();
         CCDParty partyDetail = ccdRespondent.getPartyDetail();
+
+        System.out.println("D  DefendentMapper ccdRespondent PCQID :: "+ccdRespondent.getPcqId());
 
         builder
             .serviceDate(ccdRespondent.getServedDate())
@@ -123,7 +126,7 @@ public class DefendantMapper {
         reDeterminationMapper.from(builder, ccdRespondent);
 
         builder.moneyReceivedOn(ccdRespondent.getPaidInFullDate());
-
+        System.out.println("DefendantMapper from ***"+respondentElement.getValue().getPcqId());
         return theirDetailsMapper.from(respondentElement);
     }
 

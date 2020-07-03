@@ -30,6 +30,8 @@ public class SampleTheirDetails {
     private LocalDate dateOfBirth;
     private String collectionId = "3d0bc933-0d46-4564-94bd-79e6e69b838b";
     private String phoneNumber;
+    private String pcqId;
+
 
     public static SampleTheirDetails builder() {
         return new SampleTheirDetails();
@@ -105,13 +107,18 @@ public class SampleTheirDetails {
         return this;
     }
 
+    public SampleTheirDetails withPcqId(String pcqId) {
+        this.pcqId = pcqId;
+        return this;
+    }
+
     public TheirDetails partyDetails() {
-        return new IndividualDetails(collectionId, name, title, firstName, lastName,
+        return new IndividualDetails(collectionId, pcqId, name, title, firstName, lastName,
             address, email, representative, serviceAddress, dateOfBirth, phoneNumber);
     }
 
     public IndividualDetails individualDetails() {
-        return new IndividualDetails(collectionId, name, title, firstName, lastName,
+        return new IndividualDetails(collectionId, pcqId, name, title, firstName, lastName,
             address, email, representative, serviceAddress, dateOfBirth, phoneNumber);
     }
 
@@ -119,7 +126,7 @@ public class SampleTheirDetails {
         List<TheirDetails> individualDetailsList = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             individualDetailsList.add(
-                new IndividualDetails(collectionId, name, title, firstName, lastName,
+                new IndividualDetails(collectionId, pcqId, name, title, firstName, lastName,
                     address, email, representative, serviceAddress, dateOfBirth, phoneNumber)
             );
         }
@@ -127,17 +134,17 @@ public class SampleTheirDetails {
     }
 
     public CompanyDetails companyDetails() {
-        return new CompanyDetails(collectionId, name, address, email, representative, serviceAddress, contactPerson,
+        return new CompanyDetails(collectionId, pcqId, name, address, email, representative, serviceAddress, contactPerson,
             phoneNumber);
     }
 
     public OrganisationDetails organisationDetails() {
-        return new OrganisationDetails(collectionId, name, address, email, representative, serviceAddress,
+        return new OrganisationDetails(collectionId, pcqId, name, address, email, representative, serviceAddress,
             contactPerson, companiesHouseNumber, phoneNumber);
     }
 
     public SoleTraderDetails soleTraderDetails() {
-        return new SoleTraderDetails(collectionId, name, firstName, lastName, address, email,
+        return new SoleTraderDetails(collectionId, pcqId, name, firstName, lastName, address, email,
             representative, serviceAddress, title, businessName, phoneNumber);
     }
 
