@@ -23,13 +23,10 @@ import java.util.Map;
 
 import static uk.gov.hmcts.cmc.claimstore.services.ccd.Role.CITIZEN;
 
-
 @Service
 public class ResumeHelpWithFeeClaimSubmissionCallbackHandler extends CallbackHandler {
     private static final List<Role> ROLES = Collections.singletonList(CITIZEN);
     private static final List<CaseEvent> EVENTS = ImmutableList.of(CaseEvent.UPDATE_HELP_WITH_FEE_CLAIM);
-
-
     private final Map<CallbackType, Callback> callbacks = Map.of(
         CallbackType.ABOUT_TO_SUBMIT, this::aboutToSubmit
     );
@@ -37,17 +34,13 @@ public class ResumeHelpWithFeeClaimSubmissionCallbackHandler extends CallbackHan
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public ResumeHelpWithFeeClaimSubmissionCallbackHandler(
-        CaseDetailsConverter caseDetailsConverter,
-        CaseMapper caseMapper, UserService userService
+        CaseDetailsConverter caseDetailsConverter
     ) {
         this.caseDetailsConverter = caseDetailsConverter;
-        this.caseMapper = caseMapper;
-        this.userService = userService;
     }
 
     private final CaseDetailsConverter caseDetailsConverter;
-    private final CaseMapper caseMapper;
-    private final UserService userService;
+
 
     @Override
     protected Map<CallbackType, Callback> callbacks() {
@@ -64,13 +57,11 @@ public class ResumeHelpWithFeeClaimSubmissionCallbackHandler extends CallbackHan
         return ROLES;
     }
 
-    private CallbackResponse aboutToSubmit(CallbackParams callbackParams){
+    public CallbackResponse aboutToSubmit(CallbackParams callbackParams) {
         CCDCase ccdCase = caseDetailsConverter.extractCCDCase(callbackParams.getRequest().getCaseDetails());
-
         logger.info("Resuming claim submission with HelpWithFee for callback of type {}, claim with external id {}",
             callbackParams.getType(),
             ccdCase.getExternalId());
-
         CCDCase updatedCCDCase = ccdCase.toBuilder()
             .paymentAmount(null)
             .feeAmountInPennies(null)
@@ -82,8 +73,6 @@ public class ResumeHelpWithFeeClaimSubmissionCallbackHandler extends CallbackHan
             .paymentTransactionId(null)
             .paymentFeeId(null)
             .build();
-        System.out.println( "Updated case --> " + updatedCCDCase.toString());
-
         return AboutToStartOrSubmitCallbackResponse.builder()
             .data(caseDetailsConverter.convertToMap(updatedCCDCase))
             .build();
