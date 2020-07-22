@@ -83,7 +83,7 @@ public class IdamConsumerTest {
         assertThat(response.getString("surname")).isNotBlank();
 
         JSONArray rolesArr = new JSONArray(response.getString("roles")); // create a rolesArray -
-        // check assigned and below, prob better way of doing this in cMC
+        // check assigned and below, prob better way of doing this in CMC
         assertThat(rolesArr).isNotNull(); //roles array is not blank
         assertThat(rolesArr.length()).isNotZero(); //roles array has item(s)
         assertThat(rolesArr.get(0).toString()).isNotBlank(); //first roles array item is not empty.
