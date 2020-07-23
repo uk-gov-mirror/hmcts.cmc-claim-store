@@ -1,5 +1,6 @@
 package uk.gov.hmcts.cmc.claimstore.services.ccd.callbacks;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.cmc.ccd.domain.CaseEvent;
 import uk.gov.hmcts.cmc.ccd.mapper.CaseMapper;
 import uk.gov.hmcts.cmc.claimstore.services.DirectionsQuestionnaireDeadlineCalculator;
+import uk.gov.hmcts.cmc.claimstore.services.ccd.Role;
 import uk.gov.hmcts.cmc.claimstore.services.notifications.DefendantResponseNotificationService;
 import uk.gov.hmcts.cmc.claimstore.utils.CaseDetailsConverter;
 import uk.gov.hmcts.cmc.domain.models.Claim;
@@ -19,15 +21,20 @@ import uk.gov.hmcts.reform.ccd.client.model.CallbackRequest;
 import uk.gov.hmcts.reform.ccd.client.model.CaseDetails;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HWF NO Remission Rejected Callback Handler")
 class HWFNoRemissionCallbackHandlerTest {
+
+    private static final List<Role> ROLES = Collections.singletonList(Role.CASEWORKER);
+    private static final List<CaseEvent> EVENTS = ImmutableList.of(CaseEvent.HWF_NO_REMISSION);
 
     private static final String AUTHORISATION = "Bearer: aaaa";
     private HWFNoRemissionCallbackHandler handler;
@@ -77,6 +84,18 @@ class HWFNoRemissionCallbackHandlerTest {
             .containsEntry("hwfFeeDetailsSummary", "NOT_QUALIFY_FEE_ASSISTANCE")
             .containsEntry("hwfMandatoryDetails", "Details");
 
+    }
+
+    @Test
+    void getSupportedRoles() {
+        List<Role> roleList = handler.getSupportedRoles();
+        assertEquals(ROLES, roleList);
+    }
+
+    @Test
+    void handledEvents() {
+        List<CaseEvent> caseEventList = handler.handledEvents();
+        assertEquals(EVENTS, caseEventList);
     }
 
 }
