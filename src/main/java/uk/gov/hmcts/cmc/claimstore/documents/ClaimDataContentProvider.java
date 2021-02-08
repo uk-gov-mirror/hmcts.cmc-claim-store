@@ -72,6 +72,7 @@ public class ClaimDataContentProvider {
             totalAmountComponents.add(interestContent.getAmountRealValue());
         }
 
+        Optional<String> helpWithFeesNumber = claim.getClaimData().getHelpWithFeesNumber();
         Optional<StatementOfTruth> optionalStatementOfTruth = claim.getClaimData().getStatementOfTruth();
 
         List<TimelineEvent> events = claim.getClaimData().getTimeline().map(Timeline::getEvents).orElse(null);
@@ -100,7 +101,8 @@ public class ClaimDataContentProvider {
             events,
             evidences,
             mapToAmountRowContent(amountBreakDown.getRows()),
-            optionalStatementOfTruth.orElse(null)
+            optionalStatementOfTruth.orElse(null),
+            helpWithFeesNumber.orElse(null)
         );
     }
 
