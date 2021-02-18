@@ -57,7 +57,6 @@ public class PersonContentProviderTest {
         );
     }
 
-
     @Test(expected = NullPointerException.class)
     @Ignore
     public void shouldThrowNullPointerWhenGivenNullAddress() {
