@@ -797,7 +797,7 @@ public class CoreCaseDataService {
         }
     }
 
-    private StartEventResponse startUpdate(
+    public StartEventResponse startUpdate(
         String authorisation,
         EventRequestData eventRequestData,
         Long caseId,

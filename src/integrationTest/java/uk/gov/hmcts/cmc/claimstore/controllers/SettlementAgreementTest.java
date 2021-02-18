@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import uk.gov.hmcts.cmc.ccd.domain.CCDCase;
 import uk.gov.hmcts.cmc.claimstore.BaseMockSpringTest;
 import uk.gov.hmcts.cmc.claimstore.services.ClaimService;
+import uk.gov.hmcts.cmc.claimstore.services.ccd.CoreCaseDataService;
 import uk.gov.hmcts.cmc.claimstore.services.ccd.Role;
 import uk.gov.hmcts.cmc.claimstore.services.notifications.fixtures.SampleUserDetails;
 import uk.gov.hmcts.cmc.domain.models.Claim;
@@ -21,12 +22,13 @@ import uk.gov.hmcts.cmc.domain.models.sampledata.SampleClaim;
 import uk.gov.hmcts.cmc.domain.models.sampledata.SampleClaimantResponse;
 import uk.gov.hmcts.cmc.email.EmailService;
 import uk.gov.hmcts.reform.ccd.client.model.CaseDetails;
+import uk.gov.hmcts.reform.ccd.client.model.EventRequestData;
 import uk.gov.hmcts.reform.ccd.client.model.StartEventResponse;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -42,6 +44,9 @@ public class SettlementAgreementTest extends BaseMockSpringTest {
 
     @MockBean
     protected EmailService emailService;
+
+    @MockBean
+    private CoreCaseDataService coreCaseDataService;
 
     @Before
     public void setUp() {
@@ -148,8 +153,9 @@ public class SettlementAgreementTest extends BaseMockSpringTest {
 
         when(claimService.getClaimByExternalId(claim.getExternalId(), AUTHORISATION_TOKEN))
             .thenReturn(claim);
-        when(coreCaseDataApi.startEventForCitizen(anyString(), anyString(), anyString(), anyString(), anyString(),
-            anyString(), anyString())).thenReturn(startEventResponse);
+        given(coreCaseDataService.startUpdate(any(String.class), any(EventRequestData.class), any(Long.class),
+            any(Boolean.class)))
+            .willReturn(startEventResponse);
 
         MockHttpServletRequestBuilder requestBuilder = post(url, claim.getExternalId())
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)

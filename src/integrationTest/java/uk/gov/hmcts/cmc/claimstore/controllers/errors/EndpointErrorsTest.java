@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 public class EndpointErrorsTest extends BaseMockSpringTest {
 
-    @Autowired
+    @MockBean
     protected CaseRepository caseRepository;
 
     @MockBean
@@ -50,7 +50,7 @@ public class EndpointErrorsTest extends BaseMockSpringTest {
             .perform(get("/claims/" + externalId)
                 .header(HttpHeaders.AUTHORIZATION, BEARER_TOKEN)
             )
-            .andExpect(status().isInternalServerError());
+            .andExpect(status().isNotFound());
     }
 
     @Test
@@ -62,6 +62,6 @@ public class EndpointErrorsTest extends BaseMockSpringTest {
         webClient
             .perform(post("/claims/" + externalId + "/request-more-time")
                 .header(HttpHeaders.AUTHORIZATION, BEARER_TOKEN))
-            .andExpect(status().isInternalServerError());
+            .andExpect(status().isNotFound());
     }
 }

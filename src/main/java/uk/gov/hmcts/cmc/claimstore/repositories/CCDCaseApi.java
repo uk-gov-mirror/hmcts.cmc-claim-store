@@ -402,7 +402,7 @@ public class CCDCaseApi {
         return results;
     }
 
-    private List<CaseDetails> performSearch(User user, Map<String, String> searchCriteria, String serviceAuthToken) {
+    public List<CaseDetails> performSearch(User user, Map<String, String> searchCriteria, String serviceAuthToken) {
         List<CaseDetails> result;
         if (user.getUserDetails().isSolicitor() || user.getUserDetails().isCaseworker()) {
 

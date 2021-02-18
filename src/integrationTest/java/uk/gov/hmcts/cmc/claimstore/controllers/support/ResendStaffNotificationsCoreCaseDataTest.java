@@ -13,7 +13,10 @@ import uk.gov.hmcts.cmc.claimstore.BaseMockSpringTest;
 import uk.gov.hmcts.cmc.claimstore.idam.models.GeneratePinResponse;
 import uk.gov.hmcts.cmc.claimstore.idam.models.User;
 import uk.gov.hmcts.cmc.claimstore.idam.models.UserDetails;
+import uk.gov.hmcts.cmc.claimstore.repositories.CCDCaseApi;
+import uk.gov.hmcts.cmc.claimstore.services.ClaimService;
 import uk.gov.hmcts.cmc.claimstore.services.notifications.fixtures.SampleUserDetails;
+import uk.gov.hmcts.cmc.domain.models.sampledata.SampleClaim;
 import uk.gov.hmcts.cmc.email.EmailData;
 import uk.gov.hmcts.cmc.email.EmailService;
 import uk.gov.hmcts.reform.ccd.client.model.CaseDetails;
@@ -22,6 +25,7 @@ import uk.gov.hmcts.reform.sendletter.api.SendLetterResponse;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +37,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.hmcts.cmc.ccd.domain.CaseEvent.LINK_LETTER_HOLDER;
@@ -46,11 +51,17 @@ import static uk.gov.hmcts.cmc.claimstore.utils.ResourceLoader.successfulCoreCas
 
 public class ResendStaffNotificationsCoreCaseDataTest extends BaseMockSpringTest {
 
-    private static final String CASE_REFERENCE = "000MC023";
+    private static final String CASE_REFERENCE = "000MC003";
     private static final String PAGE = "1";
 
     @MockBean
     protected EmailService emailService;
+
+    @MockBean
+    private ClaimService claimService;
+
+    @MockBean
+    private CCDCaseApi ccdCaseApi;
 
     @Captor
     private ArgumentCaptor<EmailData> emailDataArgument;
@@ -65,6 +76,10 @@ public class ResendStaffNotificationsCoreCaseDataTest extends BaseMockSpringTest
         given(userService.authenticateAnonymousCaseWorker()).willReturn(user);
         given(userService.getUser(BEARER_TOKEN)).willReturn(user);
         given(authTokenGenerator.generate()).willReturn(SERVICE_TOKEN);
+        when(claimService.getClaimByReferenceAnonymous(CASE_REFERENCE)).thenReturn(Optional.of(SampleClaim.builder()
+            .withReferenceNumber(CASE_REFERENCE)
+            .withMoreTimeRequested(true)
+            .build()));
     }
 
     @Test
@@ -234,16 +249,13 @@ public class ResendStaffNotificationsCoreCaseDataTest extends BaseMockSpringTest
     }
 
     private void givenSearchByReferenceNumberReturns(String caseReference, List<CaseDetails> cases) {
-        given(coreCaseDataApi.searchForCaseworker(
-            any(),
-            any(),
-            any(),
-            any(),
+
+        given(ccdCaseApi.performSearch(
             any(),
             eq(ImmutableMap.of("case.previousServiceCaseReference", caseReference,
                 "page", PAGE,
-                "sortDirection", "desc"))
-            )
+                "sortDirection", "desc")),
+            any())
         ).willReturn(cases);
     }
 

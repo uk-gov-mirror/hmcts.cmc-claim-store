@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import uk.gov.hmcts.cmc.claimstore.BaseMockSpringTest;
 import uk.gov.hmcts.cmc.claimstore.idam.models.User;
 import uk.gov.hmcts.cmc.claimstore.idam.models.UserDetails;
+import uk.gov.hmcts.cmc.claimstore.services.ccd.CoreCaseDataService;
 import uk.gov.hmcts.cmc.claimstore.services.notifications.fixtures.SampleUserDetails;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 import uk.gov.hmcts.cmc.domain.models.ClaimData;
@@ -47,6 +48,9 @@ public class CreateClaimCitizenTest extends BaseMockSpringTest {
 
     @MockBean
     protected EmailService emailService;
+
+    @MockBean
+    private CoreCaseDataService coreCaseDataService;
 
     @Before
     public void before() {

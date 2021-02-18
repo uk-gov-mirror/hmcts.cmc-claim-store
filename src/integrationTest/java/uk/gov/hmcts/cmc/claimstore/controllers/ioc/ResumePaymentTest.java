@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import uk.gov.hmcts.cmc.claimstore.BaseMockSpringTest;
 import uk.gov.hmcts.cmc.claimstore.idam.models.User;
 import uk.gov.hmcts.cmc.claimstore.idam.models.UserDetails;
+import uk.gov.hmcts.cmc.claimstore.services.ccd.CoreCaseDataService;
 import uk.gov.hmcts.cmc.claimstore.services.notifications.fixtures.SampleUserDetails;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 import uk.gov.hmcts.cmc.domain.models.ClaimData;
@@ -22,6 +23,7 @@ import uk.gov.hmcts.cmc.domain.models.sampledata.SampleClaim;
 import uk.gov.hmcts.cmc.domain.models.sampledata.SampleClaimData;
 import uk.gov.hmcts.cmc.email.EmailService;
 import uk.gov.hmcts.reform.ccd.client.model.CaseDetails;
+import uk.gov.hmcts.reform.ccd.client.model.EventRequestData;
 import uk.gov.hmcts.reform.ccd.client.model.StartEventResponse;
 
 import java.math.BigDecimal;
@@ -57,6 +59,9 @@ public class ResumePaymentTest extends BaseMockSpringTest {
 
     @MockBean
     protected EmailService emailService;
+
+    @MockBean
+    private CoreCaseDataService coreCaseDataService;
 
     @Before
     public void before() {
@@ -120,15 +125,8 @@ public class ResumePaymentTest extends BaseMockSpringTest {
             )
         ).thenReturn(ImmutableList.of(caseDetails));
 
-        given(coreCaseDataApi.startEventForCitizen(
-            eq(BEARER_TOKEN),
-            eq(SERVICE_TOKEN),
-            eq(SUBMITTER_ID),
-            eq(JURISDICTION_ID),
-            eq(CASE_TYPE_ID),
-            eq(String.valueOf(CASE_ID)),
-            eq(RESUME_CLAIM_PAYMENT_CITIZEN.getValue())
-            )
+        given(coreCaseDataService.startUpdate(any(String.class), any(EventRequestData.class), any(Long.class),
+            any(Boolean.class))
         ).willReturn(StartEventResponse.builder()
             .eventId(RESUME_CLAIM_PAYMENT_CITIZEN.getValue())
             .caseDetails(caseDetails)
