@@ -212,7 +212,7 @@ dependencies {
   compile group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: versions.springBoot
   compile group: 'uk.gov.hmcts.reform', name: 'properties-volume-spring-boot-starter', version: '0.1.0'
 
-  compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.10'
+  compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0'
   compile group: 'org.apache.commons', name: 'commons-csv', version: '1.8'
 
   compile group: 'org.jdbi', name: 'jdbi', version: '2.78'
