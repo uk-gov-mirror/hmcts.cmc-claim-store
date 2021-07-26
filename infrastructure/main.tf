@@ -51,10 +51,10 @@ data "azurerm_key_vault_secret" "rpa_email_sealed_claim" {
   key_vault_id = "${data.azurerm_key_vault.cmc_key_vault.id}"
 }
 
-data "azurerm_key_vault_secret" "rpa-email-breathing-space" {
-  name = "rpa-email-breathing-space"
-  key_vault_id = "${data.azurerm_key_vault.cmc_key_vault.id}"
-}
+# data "azurerm_key_vault_secret" "rpa-email-breathing-space" {
+#   name = "rpa-email-breathing-space"
+#   key_vault_id = "${data.azurerm_key_vault.cmc_key_vault.id}"
+# }
 
 data "azurerm_key_vault_secret" "rpa_email_more_time_requested" {
   name = "rpa-email-more-time-requested"
@@ -119,7 +119,6 @@ resource "azurerm_key_vault_secret" "cmc-db-password" {
 
 data "azurerm_key_vault" "send_grid" {
   provider = azurerm.send-grid
-
   name                = var.env != "prod" ? "sendgridnonprod" : "sendgridprod"
   resource_group_name = var.env != "prod" ? "SendGrid-nonprod" : "SendGrid-prod"
 }
@@ -151,6 +150,10 @@ module "database" {
   storage_mb = "${var.database_storage_mb}"
   common_tags = "${var.common_tags}"
   subscription = "${var.subscription}"
+
+  providers = {
+    azurerm = azurerm.infra
+   }
 }
 
 // DB version 11
@@ -168,6 +171,10 @@ module "database-v11" {
   storage_mb = "${var.database_storage_mb}"
   common_tags = "${var.common_tags}"
   subscription = "${var.subscription}"
+
+  providers = {
+    azurerm = azurerm.infra
+   }
 }
 
 resource "azurerm_key_vault_secret" "cmc-db-password-v11" {
