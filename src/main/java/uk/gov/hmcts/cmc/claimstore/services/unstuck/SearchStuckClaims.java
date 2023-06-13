@@ -7,7 +7,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.cmc.claimstore.models.idam.User;
 import uk.gov.hmcts.cmc.claimstore.repositories.CaseSearchApi;
-import uk.gov.hmcts.cmc.claimstore.services.UserService;
 import uk.gov.hmcts.cmc.domain.models.Claim;
 import uk.gov.hmcts.cmc.domain.models.ClaimState;
 
@@ -19,9 +18,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class SearchStuckClaims {
 
-    private final UserService userService;
     private final CaseSearchApi caseSearchApi;
-
 
     public Set<Claim> findStuckClaims(User user) {
         Set<Claim> claims = new HashSet<>(caseSearchApi.getClaims(user, query()));
