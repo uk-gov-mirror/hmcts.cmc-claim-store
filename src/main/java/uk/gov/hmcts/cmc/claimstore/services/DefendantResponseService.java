@@ -91,6 +91,17 @@ public class DefendantResponseService {
         return claimAfterSavingResponse;
     }
 
+    public Claim save(
+        String externalId,
+        String defendantId,
+        Response response,
+        String username,
+        String password
+    ) {
+        String authorization = userService.getAuthorisationToken(username, password);
+        return save(externalId, defendantId, response, authorization);
+    }
+
     public AppInsightsEvent getAppInsightsEventName(Response response) {
         requireNonNull(response, "response must not be null");
 
@@ -156,5 +167,4 @@ public class DefendantResponseService {
     private boolean isCCJAlreadyRequested(Claim claim) {
         return claim.getCountyCourtJudgmentRequestedAt() != null;
     }
-
 }

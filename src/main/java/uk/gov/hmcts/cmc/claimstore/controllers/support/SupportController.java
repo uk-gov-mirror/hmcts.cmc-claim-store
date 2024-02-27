@@ -3,6 +3,7 @@ package uk.gov.hmcts.cmc.claimstore.controllers.support;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,8 +43,10 @@ import uk.gov.hmcts.cmc.claimstore.exceptions.NotFoundException;
 import uk.gov.hmcts.cmc.claimstore.models.idam.GeneratePinResponse;
 import uk.gov.hmcts.cmc.claimstore.models.idam.User;
 import uk.gov.hmcts.cmc.claimstore.models.idam.UserDetails;
+import uk.gov.hmcts.cmc.claimstore.repositories.CCDCaseApi;
 import uk.gov.hmcts.cmc.claimstore.rules.ClaimSubmissionOperationIndicatorRule;
 import uk.gov.hmcts.cmc.claimstore.services.ClaimService;
+import uk.gov.hmcts.cmc.claimstore.services.DefendantResponseService;
 import uk.gov.hmcts.cmc.claimstore.services.MediationReportService;
 import uk.gov.hmcts.cmc.claimstore.services.ScheduledStateTransitionService;
 import uk.gov.hmcts.cmc.claimstore.services.UserService;
@@ -83,6 +86,7 @@ import static uk.gov.hmcts.cmc.domain.models.claimantresponse.ClaimantResponseTy
 
 @RestController
 @RequestMapping("/support")
+@RequiredArgsConstructor
 public class SupportController {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -106,41 +110,8 @@ public class SupportController {
     private final ClaimSubmissionOperationIndicatorRule claimSubmissionOperationIndicatorRule;
     private final ScheduledStateTransitionService scheduledStateTransitionService;
     private final TransferCaseStateService transferCaseStateService;
-
-    @SuppressWarnings("squid:S00107")
-    public SupportController(
-        ClaimService claimService,
-        UserService userService,
-        DocumentGenerator documentGenerator,
-        MoreTimeRequestedStaffNotificationHandler moreTimeRequestedStaffNotificationHandler,
-        DefendantResponseStaffNotificationHandler defendantResponseStaffNotificationHandler,
-        CCJStaffNotificationHandler ccjStaffNotificationHandler,
-        AgreementCountersignedStaffNotificationHandler agreementCountersignedStaffNotificationHandler,
-        ClaimantResponseStaffNotificationHandler claimantResponseStaffNotificationHandler,
-        PaidInFullStaffNotificationHandler paidInFullStaffNotificationHandler,
-        DocumentsService documentsService,
-        PostClaimOrchestrationHandler postClaimOrchestrationHandler,
-        MediationReportService mediationReportService,
-        ClaimSubmissionOperationIndicatorRule claimSubmissionOperationIndicatorRule,
-        ScheduledStateTransitionService scheduledStateTransitionService,
-        TransferCaseStateService transferCaseStateService
-    ) {
-        this.claimService = claimService;
-        this.userService = userService;
-        this.documentGenerator = documentGenerator;
-        this.moreTimeRequestedStaffNotificationHandler = moreTimeRequestedStaffNotificationHandler;
-        this.defendantResponseStaffNotificationHandler = defendantResponseStaffNotificationHandler;
-        this.ccjStaffNotificationHandler = ccjStaffNotificationHandler;
-        this.agreementCountersignedStaffNotificationHandler = agreementCountersignedStaffNotificationHandler;
-        this.claimantResponseStaffNotificationHandler = claimantResponseStaffNotificationHandler;
-        this.paidInFullStaffNotificationHandler = paidInFullStaffNotificationHandler;
-        this.documentsService = documentsService;
-        this.postClaimOrchestrationHandler = postClaimOrchestrationHandler;
-        this.mediationReportService = mediationReportService;
-        this.claimSubmissionOperationIndicatorRule = claimSubmissionOperationIndicatorRule;
-        this.scheduledStateTransitionService = scheduledStateTransitionService;
-        this.transferCaseStateService = transferCaseStateService;
-    }
+    private final CCDCaseApi ccdCaseApi;
+    private final DefendantResponseService defendantResponseService;
 
     @PutMapping("/claim/{referenceNumber}/event/{event}/resend-staff-notifications")
     @Operation(summary = "Resend staff notifications associated with provided event")
@@ -259,6 +230,7 @@ public class SupportController {
             String submitterName = claim.getClaimData().getClaimants().stream()
                 .findFirst()
                 .map(Party::getRepresentative)
+                .filter(Optional::isPresent)
                 .map(Optional::get)
                 .map(Representative::getOrganisationName)
                 .orElseThrow(() -> new IllegalArgumentException(MISSING_REPRESENTATIVE));
@@ -270,6 +242,29 @@ public class SupportController {
             this.postClaimOrchestrationHandler
                 .citizenIssueHandler(new CitizenClaimCreatedEvent(claim, submitterName, authorisation));
         }
+    }
+
+    @PutMapping(value = "/claim/{ccdCaseId}/defendant/{defendantId}/email/{defendantEmail}")
+    @Operation(summary = "Link defendant to claim using defendantId and email")
+    public void linkDefendant(
+        @PathVariable("ccdCaseId") String ccdCaseId,
+        @PathVariable("defendantId") String defendantId,
+        @PathVariable("defendantEmail") String defendantEmail) {
+
+        ccdCaseApi.linkDefendant(ccdCaseId, defendantId, defendantEmail);
+    }
+
+    @PutMapping(
+        value = "/claim/{externalId}/defendant/{defendantId}/email/{defendantEmail}/password/{password}",
+        consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Creates a new defendant response")
+    public Claim saveDefendantResponse(
+        @Valid @NotNull @RequestBody Response response,
+        @PathVariable("defendantId") String defendantId,
+        @PathVariable("externalId") String externalId,
+        @PathVariable("defendantEmail") String defendantEmail,
+        @PathVariable("password") String password) {
+        return defendantResponseService.save(externalId, defendantId, response, defendantEmail, password);
     }
 
     @PostMapping(value = "/sendMediation", consumes = MediaType.APPLICATION_JSON_VALUE)

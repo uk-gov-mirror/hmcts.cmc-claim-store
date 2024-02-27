@@ -9,7 +9,7 @@ services:
         - http_proxy
         - https_proxy
         - no_proxy
-    image: hmctspublic.azurecr.io/cmc/claim-store
+    image: claim-store:staging
     environment:
       - CMC_DB_HOST=cmc-database
       - CMC_DB_PORT=5432
